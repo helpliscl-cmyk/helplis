@@ -46,10 +46,11 @@ Optimización:
 
 - Repositorio inspeccionado: `https://github.com/helpliscl-cmyk/helplis`
 - Visibilidad: Public
-- Remote local: `origin https://github.com/helpliscl-cmyk/helplis.git`
+- Remote local: `origin https://helpliscl-cmyk@github.com/helpliscl-cmyk/helplis.git`
 - Rama local de trabajo: `feature/supabase-integration`
 - Se hizo `git fetch origin`.
 - Push de `feature/supabase-integration`: OK.
+- Autenticación: se fijó el usuario `helpliscl-cmyk` en el remote para evitar selección ambigua entre cuentas guardadas.
 - Pull request sugerido: `https://github.com/helpliscl-cmyk/helplis/pull/new/feature/supabase-integration`
 - No se hizo force push.
 - Remoto `main` tiene historial independiente con 2 commits y 3 PNG en raíz.

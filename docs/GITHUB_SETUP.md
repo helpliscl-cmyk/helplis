@@ -21,9 +21,10 @@ Fecha: 2026-07-11.
   - `0969976 test: add verification suite and ci`
   - `de8e551 docs: document helplis mvp and deployment plans`
 - Rama creada para esta fase: `feature/supabase-integration`
-- Remote configurado: `origin https://github.com/helpliscl-cmyk/helplis.git`
+- Remote configurado: `origin https://helpliscl-cmyk@github.com/helpliscl-cmyk/helplis.git`
 - `git fetch origin`: OK.
 - Push de `feature/supabase-integration`: OK tras completar autenticación GitHub.
+- Nota: se fijó el usuario `helpliscl-cmyk` en la URL del remote porque había varias cuentas GitHub guardadas en Git Credential Manager.
 
 ## Comparación local/remoto
 
