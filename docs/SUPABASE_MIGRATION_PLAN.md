@@ -8,17 +8,19 @@ Fecha: 2026-07-11.
 - Proyecto visible: `helpliscl-cmyk's Project`.
 - Project ref visible: `ndzcpzjkseugqffyeslr`.
 - Organización visible: `helpliscl-cmyk's Org`.
-- Estado de tablas: sin tablas en `public`.
+- Estado inicial de tablas: sin tablas en `public`.
 - Panel mostraba aviso de incidencia técnica de Supabase en la parte superior.
 - La opción de habilitar RLS automáticamente para tablas nuevas estaba visible.
 
-El proyecto parece asociado a HelPlis por nombre de organización/proyecto, pero no se ejecutó SQL desde el navegador en esta fase para evitar dejar una configuración parcialmente aplicada sin validación de secretos y sin adaptar todavía el runtime de la app.
+El proyecto fue confirmado visualmente como asociado a HelPlis por nombre de organización/proyecto.
 
 ## Entregable local preparado
 
 Migración creada:
 
 `supabase/migrations/20260711180000_helplis_mvp.sql`
+
+Migración ejecutada en Supabase vía SQL Editor el 2026-07-11 con resultado: `Success. No rows returned`.
 
 Incluye:
 
@@ -31,6 +33,15 @@ Incluye:
 - Políticas por usuario, organización y admin.
 - Función `resolve_public_profile(public_code)` con `security definer`.
 - Bucket privado `profile-photos` y políticas de Storage por carpeta de usuario.
+
+## Verificación posterior en Supabase
+
+- Tablas visibles en `public`: 14.
+- Tablas verificadas: `app_users`, `organizations`, `organization_memberships`, `devices`, `profiles`, `contacts`, `scan_events`, `location_reports`, `notification_events`, `support_messages`, `import_batches`, `import_rows`, `campaigns`, `audit_logs`.
+- Políticas RLS visibles, incluyendo `owners read devices`, `owners read profiles`, `public insert scans`, `public insert consented locations` y `admins read audit logs`.
+- Funciones visibles: `current_app_role`, `is_admin`, `is_org_member`, `resolve_public_profile`.
+- Enums visibles: `app_role`, `device_status`, `product_type`, `profile_type`, `scan_method`.
+- Storage: bucket `profile-photos`, privado, 4 políticas, límite 5 MB, MIME permitidos `image/jpeg`, `image/png`, `image/webp`.
 
 ## Variables necesarias
 
@@ -64,11 +75,10 @@ Actualizadas en `.env.example` sin valores secretos:
 - `location_reports`, `notification_events` y `audit_logs` no son públicos.
 - La ficha pública usa función controlada.
 
-## Pendientes antes de aplicar
+## Pendientes después de aplicar
 
-- Confirmar si el proyecto debe renombrarse a `HelPlis` en Supabase.
+- Confirmar si el proyecto debe renombrarse visualmente a `HelPlis` en Supabase.
 - Obtener y guardar variables reales solo en `.env.local` o proveedor de hosting.
-- Ejecutar migración en un ambiente de prueba.
 - Agregar adaptadores de datos Supabase a la app.
 - Agregar tests de Auth, Storage, RLS y RPC.
 - Decidir si Prisma se mantiene para SQLite local o si se agrega Prisma PostgreSQL por ambiente.

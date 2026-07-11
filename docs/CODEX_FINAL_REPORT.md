@@ -70,10 +70,11 @@ Commits creados en esta fase:
 
 - Proyecto observado: `helpliscl-cmyk's Project`
 - Project ref visible: `ndzcpzjkseugqffyeslr`
-- Tablas observadas: 0 en `public`
+- Estado inicial: 0 tablas en `public`
 - Migración preparada: `supabase/migrations/20260711180000_helplis_mvp.sql`
 - Incluye tablas, índices, RLS, función de ficha pública, bucket `profile-photos` y políticas de Storage.
-- No se ejecutó la migración en Supabase durante esta fase para evitar una configuración parcialmente aplicada sin adaptar runtime/secretos.
+- Migración ejecutada desde SQL Editor en Supabase: OK, `Success. No rows returned`.
+- Verificación posterior: 14 tablas creadas, políticas RLS visibles, funciones/enums visibles y bucket `profile-photos` creado con 4 políticas, 5 MB y MIME `image/jpeg`, `image/png`, `image/webp`.
 
 ## Variables
 
@@ -106,7 +107,7 @@ Actualizadas en `.env.example`:
 
 ## Riesgos
 
-- Supabase todavía no está conectado al runtime de la app.
+- Supabase ya tiene esquema MVP aplicado, pero todavía no está conectado al runtime de la app.
 - GitHub remoto `main` y local tienen historias independientes.
 - La rama remota está subida; falta crear/revisar PR y observar CI en GitHub.
 - El E2E estándar requiere detener el server 3108 o usar la config alternativa agregada.
