@@ -23,6 +23,7 @@ Fecha: 2026-07-11.
 - Rama creada para esta fase: `feature/supabase-integration`
 - Remote configurado: `origin https://github.com/helpliscl-cmyk/helplis.git`
 - `git fetch origin`: OK.
+- Push de `feature/supabase-integration`: intentado, pero el proceso quedó esperando autenticación HTTPS y fue detenido tras timeout. `gh` no está instalado localmente.
 
 ## Comparación local/remoto
 
@@ -41,7 +42,7 @@ Push seguro recomendado:
 git push -u origin feature/supabase-integration
 ```
 
-Luego crear PR o revisar manualmente cómo reconciliar `main`. Si se desea que `main` contenga la app completa, hacerlo mediante merge/PR consciente, preservando los assets remotos o moviéndolos a `public/brand/source` antes de limpiar la raíz.
+Este comando requiere credenciales Git disponibles en terminal o instalar/autenticar GitHub CLI. Luego crear PR o revisar manualmente cómo reconciliar `main`. Si se desea que `main` contenga la app completa, hacerlo mediante merge/PR consciente, preservando los assets remotos o moviéndolos a `public/brand/source` antes de limpiar la raíz.
 
 ## Verificaciones pendientes tras push
 
