@@ -35,6 +35,10 @@ export function PublicActions({
   const firstWhatsapp = contacts.find((contact) => contact.phone && contact.whatsappEnabled);
 
   async function shareLocation() {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setStatus("Sin conexión. Intenta compartir la ubicación cuando recuperes internet.");
+      return;
+    }
     setStatus("Tu ubicación solo se enviará si aceptas compartirla.");
     if (!navigator.geolocation) {
       setStatus("Este navegador no permite compartir ubicación.");
@@ -82,7 +86,7 @@ export function PublicActions({
         <a
           href={`tel:${firstCallable.phone}`}
           onClick={() => void record(scanId, "CALL_CLICKED")}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-neutral-950 bg-neutral-950 px-4 py-2 text-sm font-medium text-white"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[var(--brand-primary-dark)] bg-[var(--brand-primary-dark)] px-4 py-2 text-sm font-medium text-white"
         >
           <Phone aria-hidden className="h-4 w-4" />
           Llamar
@@ -94,21 +98,21 @@ export function PublicActions({
             `Hola, escaneé el código ${publicCode} en HelPlis.`,
           )}`}
           onClick={() => void record(scanId, "WHATSAPP_CLICKED")}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-950"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[var(--brand-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--brand-text)]"
         >
           <MessageCircle aria-hidden className="h-4 w-4" />
           Abrir WhatsApp
         </a>
       ) : null}
       {showLocationButton ? (
-        <Button type="button" variant="secondary" onClick={shareLocation}>
+        <Button type="button" variant="accent" onClick={shareLocation}>
           <LocateFixed aria-hidden className="h-4 w-4" />
           Compartir mi ubicación con el responsable
         </Button>
       ) : null}
       <Button type="button" variant="secondary" onClick={markFound}>
         <MapPinCheck aria-hidden className="h-4 w-4" />
-        Lo encontré
+        Reportar encontrado
       </Button>
       <Button type="button" variant="secondary" onClick={copyLink}>
         <Copy aria-hidden className="h-4 w-4" />
@@ -119,7 +123,7 @@ export function PublicActions({
         Informar emergencia
       </Button>
       {status ? (
-        <p aria-live="polite" className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+        <p aria-live="polite" className="rounded-md border border-[var(--brand-border)] bg-white p-3 text-sm text-[var(--brand-muted)]">
           {status}
         </p>
       ) : null}

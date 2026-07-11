@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { LogOut } from "lucide-react";
-import { logoutAction } from "@/features/auth/actions";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { Button } from "@/components/ui/button";
+import { logoutAction } from "@/features/auth/actions";
 
 const dashboardLinks = [
   ["/dashboard", "Resumen"],
@@ -23,10 +24,10 @@ const adminLinks = [
   ["/admin/users", "Usuarios"],
   ["/admin/profiles", "Perfiles"],
   ["/admin/organizations", "Organizaciones"],
-  ["/admin/campaigns", "Campañas"],
+  ["/admin/campaigns", "Campanas"],
   ["/admin/scans", "Escaneos"],
   ["/admin/notifications", "Notificaciones"],
-  ["/admin/audit", "Auditoría"],
+  ["/admin/audit", "Auditoria"],
   ["/admin/errors", "Errores"],
   ["/admin/settings", "Ajustes"],
 ];
@@ -41,28 +42,26 @@ export function AppShell({
   const links = mode === "admin" ? adminLinks : dashboardLinks;
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <header className="border-b border-neutral-200 bg-white">
+    <div className="min-h-screen bg-[var(--brand-background)]">
+      <header className="border-b border-[var(--brand-border)] bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link href="/" className="text-lg font-semibold text-neutral-950">
-            HelPlis
-          </Link>
+          <BrandLogo className="h-9" />
           <form action={logoutAction}>
             <Button variant="ghost" type="submit">
               <LogOut aria-hidden className="h-4 w-4" />
-              Cerrar sesión
+              Cerrar sesion
             </Button>
           </form>
         </div>
       </header>
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[240px_1fr]">
-        <nav aria-label={mode === "admin" ? "Navegación administrativa" : "Navegación de usuario"}>
-          <div className="grid gap-1 rounded-lg border border-neutral-200 bg-white p-2">
+        <nav aria-label={mode === "admin" ? "Navegacion administrativa" : "Navegacion de usuario"}>
+          <div className="grid gap-1 rounded-lg border border-[var(--brand-border)] bg-white p-2">
             {links.map(([href, label]) => (
               <Link
                 key={href}
                 href={href}
-                className="rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-950"
+                className="rounded-md px-3 py-2 text-sm font-medium text-[var(--brand-muted)] hover:bg-[#edf8fb] hover:text-[var(--brand-primary-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary-light)]"
               >
                 {label}
               </Link>

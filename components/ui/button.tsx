@@ -3,10 +3,11 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "reac
 import { cn } from "@/lib/utils";
 
 const variants = {
-  primary: "border-neutral-950 bg-neutral-950 text-white hover:bg-neutral-800",
-  secondary: "border-neutral-300 bg-white text-neutral-950 hover:bg-neutral-100",
-  danger: "border-red-700 bg-red-700 text-white hover:bg-red-800",
-  ghost: "border-transparent bg-transparent text-neutral-700 hover:bg-neutral-100",
+  primary: "border-[var(--brand-primary-dark)] bg-[var(--brand-primary-dark)] text-white hover:bg-[#082b5d]",
+  secondary: "border-[var(--brand-border)] bg-white text-[var(--brand-text)] hover:bg-[#edf8fb]",
+  accent: "border-[var(--brand-primary-light)] bg-[var(--brand-primary-light)] text-[var(--brand-text)] hover:bg-[#19d0c5]",
+  danger: "border-[var(--brand-danger)] bg-[var(--brand-danger)] text-white hover:bg-[#a93430]",
+  ghost: "border-transparent bg-transparent text-[var(--brand-muted)] hover:bg-[#edf8fb]",
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -18,7 +19,7 @@ export function Button({ className, variant = "primary", type = "button", ...pro
     <button
       type={type}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-neutral-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary-light)] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         className,
       )}
@@ -37,7 +38,7 @@ export function ButtonLink({ className, variant = "primary", ...props }: ButtonL
   return (
     <Link
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-neutral-950 focus:ring-offset-2",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary-light)] focus:ring-offset-2",
         variants[variant],
         className,
       )}

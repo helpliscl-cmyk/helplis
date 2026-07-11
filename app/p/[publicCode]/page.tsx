@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, HeartPulse, Info, ShieldCheck } from "lucide-react";
+import { BrandMark } from "@/components/brand/brand-logo";
 import { Badge, statusTone } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,9 +28,7 @@ export default async function PublicProfilePage({
   });
 
   if (result.status === "INVALID_CODE") {
-    return (
-      <PublicState title="Código no válido" description="No encontramos una ficha pública para este código." />
-    );
+    return <PublicState title="Código no válido" description="No encontramos una ficha pública para este código." />;
   }
 
   if (result.status === "NOT_ACTIVATED") {
@@ -61,20 +61,25 @@ export default async function PublicProfilePage({
         : "Ficha activa.";
 
   return (
-    <main className="min-h-screen bg-neutral-50 px-4 py-5">
+    <main className="min-h-screen bg-[var(--brand-background)] px-4 py-5">
       <div className="mx-auto grid max-w-xl gap-4">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-neutral-700">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-[var(--brand-muted)]">
           <ArrowLeft aria-hidden className="h-4 w-4" />
           Volver
         </Link>
-        <Card className="grid gap-5">
+
+        <Card className="grid gap-5 p-5">
           <div className="flex items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <Badge tone={statusTone(result.deviceStatus)}>{statusCopy}</Badge>
-              <h1 className="mt-3 text-3xl font-semibold text-neutral-950">{result.profile.displayName}</h1>
-              <p className="mt-1 text-sm text-neutral-600">{result.profile.type} · {result.productType}</p>
+              <h1 className="mt-3 text-3xl font-semibold leading-tight text-[var(--brand-text)]">
+                {result.profile.displayName}
+              </h1>
+              <p className="mt-1 text-sm text-[var(--brand-muted)]">
+                {result.profile.type} · {result.productType}
+              </p>
             </div>
-            <div className="rounded-md bg-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-700">
+            <div className="shrink-0 rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] px-3 py-2 text-sm font-semibold text-[var(--brand-primary-dark)]">
               {result.publicCode}
             </div>
           </div>
@@ -97,6 +102,13 @@ export default async function PublicProfilePage({
             ) : null}
             {result.profile.age ? <p>Edad aproximada: {result.profile.age}</p> : null}
             {result.profile.specialInstructions ? <p>{result.profile.specialInstructions}</p> : null}
+            {!result.profile.description &&
+            !result.profile.objectDescription &&
+            !result.profile.species &&
+            !result.profile.age &&
+            !result.profile.specialInstructions ? (
+              <p>No hay instrucciones adicionales visibles.</p>
+            ) : null}
           </InfoBlock>
 
           {result.profile.medicalNotes || result.profile.allergies || result.profile.medications || result.profile.bloodType ? (
@@ -112,10 +124,10 @@ export default async function PublicProfilePage({
             <InfoBlock title="Contactos visibles">
               <div className="grid gap-2">
                 {result.contacts.map((contact) => (
-                  <div key={contact.id} className="rounded-md border border-neutral-200 p-3 text-sm">
+                  <div key={contact.id} className="rounded-md border border-[var(--brand-border)] bg-white p-3 text-sm">
                     <div className="font-medium">{contact.name ?? "Contacto autorizado"}</div>
-                    {contact.relationship ? <div className="text-neutral-600">{contact.relationship}</div> : null}
-                    {contact.phone ? <div className="text-neutral-600">{contact.phone}</div> : null}
+                    {contact.relationship ? <div className="text-[var(--brand-muted)]">{contact.relationship}</div> : null}
+                    {contact.phone ? <div className="text-[var(--brand-muted)]">{contact.phone}</div> : null}
                   </div>
                 ))}
               </div>
@@ -129,9 +141,15 @@ export default async function PublicProfilePage({
             showLocationButton={result.profile.showLocationButton}
           />
 
-          <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-xs leading-5 text-neutral-600">
-            <ShieldCheck aria-hidden className="mr-1 inline h-3.5 w-3.5" />
-            Tu ubicación solo se enviará si aceptas compartirla. HelPlis no revela la ubicación del propietario ni datos no autorizados.
+          <div className="grid gap-3 rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] p-3 text-xs leading-5 text-[var(--brand-muted)]">
+            <p>
+              <ShieldCheck aria-hidden className="mr-1 inline h-3.5 w-3.5 text-[var(--brand-accent)]" />
+              Tu ubicación solo se enviará si aceptas compartirla. HelPlis no revela la ubicación del propietario ni datos no autorizados.
+            </p>
+            <div className="flex items-center gap-2 text-[var(--brand-muted)]">
+              <BrandMark className="h-7" />
+              <span>HelPlis · Conecta. Informa. Reencuentra.</span>
+            </div>
           </div>
         </Card>
       </div>
@@ -151,17 +169,20 @@ function PublicState({
   actionLabel?: string;
 }) {
   return (
-    <main className="grid min-h-screen place-items-center bg-neutral-50 px-4 py-8">
-      <Card className="max-w-md">
-        <AlertTriangle aria-hidden className="mb-4 h-8 w-8 text-neutral-700" />
-        <h1 className="text-2xl font-semibold">{title}</h1>
-        <p className="mt-3 text-sm leading-6 text-neutral-600">{description}</p>
-        <div className="mt-5 grid gap-3">
+    <main className="brand-gradient grid min-h-screen place-items-center px-4 py-8">
+      <Card className="grid max-w-md gap-4 p-5">
+        <BrandMark className="h-12" />
+        <AlertTriangle aria-hidden className="h-8 w-8 text-[var(--brand-warning)]" />
+        <div>
+          <h1 className="text-2xl font-semibold">{title}</h1>
+          <p className="mt-3 text-sm leading-6 text-[var(--brand-muted)]">{description}</p>
+        </div>
+        <div className="grid gap-3">
           {actionHref && actionLabel ? <ButtonLink href={actionHref}>{actionLabel}</ButtonLink> : null}
           <ButtonLink href="/support" variant="secondary">
             Soporte
           </ButtonLink>
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-[var(--brand-muted)]">
             {OFFICIAL_CONTACT.email} · {OFFICIAL_CONTACT.phoneDisplay}
           </p>
         </div>
@@ -176,16 +197,16 @@ function InfoBlock({
   children,
 }: {
   title: string;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
+  icon?: ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-neutral-200 p-3">
-      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-950">
+    <section className="rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] p-3">
+      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-text)]">
         {icon}
         {title}
       </h2>
-      <div className="grid gap-1 text-sm leading-6 text-neutral-700">{children}</div>
+      <div className="grid gap-1 text-sm leading-6 text-[var(--brand-muted)]">{children}</div>
     </section>
   );
 }
