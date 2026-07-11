@@ -49,7 +49,8 @@ Optimización:
 - Remote local: `origin https://github.com/helpliscl-cmyk/helplis.git`
 - Rama local de trabajo: `feature/supabase-integration`
 - Se hizo `git fetch origin`.
-- Push intentado, bloqueado por autenticación HTTPS en terminal; procesos colgados detenidos.
+- Push de `feature/supabase-integration`: OK.
+- Pull request sugerido: `https://github.com/helpliscl-cmyk/helplis/pull/new/feature/supabase-integration`
 - No se hizo force push.
 - Remoto `main` tiene historial independiente con 2 commits y 3 PNG en raíz.
 
@@ -60,7 +61,7 @@ Commits creados en esta fase:
 - `feat: implement helplis brand experience`
 - `feat: prepare supabase and deployment setup`
 - `test: stabilize e2e against existing server`
-- `docs: record github push auth blocker`
+- `docs: record github push status`
 
 ## Supabase
 
@@ -104,7 +105,7 @@ Actualizadas en `.env.example`:
 
 - Supabase todavía no está conectado al runtime de la app.
 - GitHub remoto `main` y local tienen historias independientes.
-- La rama local aún debe subirse cuando terminal tenga credenciales GitHub o `gh` autenticado.
+- La rama remota está subida; falta crear/revisar PR y observar CI en GitHub.
 - El E2E estándar requiere detener el server 3108 o usar la config alternativa agregada.
 - La app sigue usando SQLite local como backend efectivo.
 
