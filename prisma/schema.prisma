@@ -1,0 +1,585 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ORGANIZATION_ADMIN
+  SUPPORT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum ProductType {
+  WRISTBAND
+  PET_TAG
+  KEYCHAIN
+  CARD
+  STICKER
+  LUGGAGE_TAG
+  ASSET_TAG
+  OTHER
+}
+
+enum DeviceStatus {
+  UNASSIGNED
+  AVAILABLE
+  RESERVED
+  ACTIVATED
+  LOST
+  FOUND
+  SUSPENDED
+  DEACTIVATED
+  REPLACED
+  DAMAGED
+}
+
+enum ProfileType {
+  PERSON
+  CHILD
+  SENIOR
+  DEPENDENT_PERSON
+  MEDICAL_PROFILE
+  PET
+  LUGGAGE
+  OBJECT
+  ASSET
+  EMPLOYEE
+  OTHER
+}
+
+enum ScanMethod {
+  QR
+  NFC
+  MANUAL
+  UNKNOWN
+}
+
+enum ScanEventStatus {
+  RECORDED
+  BLOCKED
+  ERROR
+}
+
+enum ActivationStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+  BLOCKED
+}
+
+enum BatchStatus {
+  DRAFT
+  GENERATED
+  SENT_TO_SUPPLIER
+  IN_PRODUCTION
+  SHIPPED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum OrganizationType {
+  SCHOOL
+  KINDERGARTEN
+  SPORTS_ACADEMY
+  CLUB
+  MEDICAL_CENTER
+  FOUNDATION
+  VETERINARY
+  MUNICIPALITY
+  COMMUNITY
+  COMPANY
+  OTHER
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  ARCHIVED
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  STAFF
+  VIEWER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  REMOVED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+  ARCHIVED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+  PUSH
+  WEBHOOK
+  LOCAL
+}
+
+enum NotificationEventType {
+  DEVICE_SCANNED
+  LOCATION_SHARED
+  CONTACT_BUTTON_CLICKED
+  WHATSAPP_BUTTON_CLICKED
+  CALL_BUTTON_CLICKED
+  MESSAGE_SENT
+  MARKED_AS_FOUND
+  EMERGENCY_REPORTED
+  ACTIVATION_COMPLETED
+  PROFILE_UPDATED
+  DEVICE_MARKED_LOST
+  DEVICE_SUSPENDED
+  DEVICE_REACTIVATED
+  SUPPORT_MESSAGE_CREATED
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  SIMULATED
+  CANCELLED
+}
+
+enum ContactActionType {
+  CALL_CLICKED
+  WHATSAPP_CLICKED
+  MESSAGE_CLICKED
+  LOCATION_SHARED
+  FOUND_REPORTED
+  EMERGENCY_REPORTED
+  PROFILE_VIEWED
+  LINK_COPIED
+}
+
+enum ImportJobStatus {
+  DRAFT
+  VALIDATED
+  IMPORTED
+  FAILED
+}
+
+enum SupportMessageStatus {
+  NEW
+  REVIEWED
+  RESOLVED
+  ARCHIVED
+}
+
+model User {
+  id                 String                   @id @default(cuid())
+  email              String                   @unique
+  phone              String?
+  name               String
+  passwordHash       String
+  role               UserRole                 @default(USER)
+  status             UserStatus               @default(PENDING)
+  emailVerifiedAt    DateTime?
+  phoneVerifiedAt    DateTime?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  lastLoginAt        DateTime?
+  deletedAt          DateTime?
+  devices            Device[]                 @relation("DeviceOwner")
+  profiles           Profile[]
+  activations        Activation[]
+  memberships        OrganizationMembership[]
+  notificationEvents NotificationEvent[]
+  auditLogs          AuditLog[]               @relation("AuditActor")
+  supportMessages    SupportMessage[]
+
+  @@index([role])
+  @@index([status])
+}
+
+model Device {
+  id                    String              @id @default(cuid())
+  publicCode            String              @unique
+  publicUrl             String              @unique
+  nfcUid                String?             @unique
+  activationCodeHash    String
+  activationCodeUsedAt  DateTime?
+  activationAttempts    Int                 @default(0)
+  activationBlockedUntil DateTime?
+  batchId               String?
+  productType           ProductType         @default(WRISTBAND)
+  status                DeviceStatus        @default(AVAILABLE)
+  ownerId               String?
+  profileId             String?
+  organizationId        String?
+  activatedAt           DateTime?
+  suspendedAt           DateTime?
+  deactivatedAt         DateTime?
+  replacedById          String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  deletedAt             DateTime?
+  batch                 Batch?              @relation(fields: [batchId], references: [id])
+  owner                 User?               @relation("DeviceOwner", fields: [ownerId], references: [id])
+  profile               Profile?            @relation(fields: [profileId], references: [id])
+  organization          Organization?        @relation(fields: [organizationId], references: [id])
+  replacedBy            Device?             @relation("Replacement", fields: [replacedById], references: [id])
+  replacements          Device[]            @relation("Replacement")
+  scanEvents            ScanEvent[]
+  activations           Activation[]
+  notificationEvents    NotificationEvent[]
+  contactActions        ContactAction[]
+
+  @@index([status])
+  @@index([productType])
+  @@index([batchId])
+  @@index([ownerId])
+  @@index([profileId])
+  @@index([organizationId])
+}
+
+model Profile {
+  id                  String             @id @default(cuid())
+  ownerId             String?
+  type                ProfileType        @default(PERSON)
+  displayName         String
+  legalName           String?
+  alias               String?
+  photoUrl            String?
+  description         String?
+  medicalNotes        String?
+  allergies           String?
+  medications         String?
+  bloodType           String?
+  specialInstructions String?
+  preferredLanguage   String             @default("es")
+  birthYear           Int?
+  species             String?
+  breed               String?
+  color               String?
+  objectDescription   String?
+  rewardMessage       String?
+  lostMessage         String?
+  showPhoto           Boolean            @default(false)
+  showMedicalInfo     Boolean            @default(false)
+  showContactNames    Boolean            @default(true)
+  showPhoneNumbers    Boolean            @default(true)
+  showAge             Boolean            @default(false)
+  showLocationButton  Boolean            @default(true)
+  showWhatsAppButton  Boolean            @default(true)
+  showCallButton      Boolean            @default(true)
+  showMessageButton   Boolean            @default(true)
+  isPublic            Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  deletedAt           DateTime?
+  owner               User?              @relation(fields: [ownerId], references: [id])
+  devices             Device[]
+  contacts            EmergencyContact[]
+  scanEvents          ScanEvent[]
+  notificationEvents  NotificationEvent[]
+  contactActions      ContactAction[]
+
+  @@index([ownerId])
+  @@index([type])
+  @@index([isPublic])
+}
+
+model EmergencyContact {
+  id              String   @id @default(cuid())
+  profileId       String
+  name            String
+  relationship    String?
+  phone           String
+  email           String?
+  whatsappEnabled Boolean  @default(true)
+  callEnabled     Boolean  @default(true)
+  messageEnabled  Boolean  @default(true)
+  priority        Int      @default(1)
+  isVisible       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([priority])
+}
+
+model ScanEvent {
+  id                 String          @id @default(cuid())
+  deviceId           String
+  profileId          String?
+  scannedAt          DateTime        @default(now())
+  scanMethod         ScanMethod      @default(UNKNOWN)
+  ipHash             String?
+  userAgent          String?
+  deviceType         String?
+  browser            String?
+  operatingSystem    String?
+  country            String?
+  region             String?
+  city               String?
+  latitude           Float?
+  longitude          Float?
+  locationAccuracy   Float?
+  locationPermission Boolean         @default(false)
+  locationSharedAt   DateTime?
+  referrer           String?
+  sessionId          String?
+  eventStatus        ScanEventStatus @default(RECORDED)
+  createdAt          DateTime        @default(now())
+  device             Device          @relation(fields: [deviceId], references: [id])
+  profile            Profile?        @relation(fields: [profileId], references: [id])
+  notificationEvents NotificationEvent[]
+  contactActions     ContactAction[]
+
+  @@index([deviceId])
+  @@index([profileId])
+  @@index([scannedAt])
+  @@index([scanMethod])
+}
+
+model Activation {
+  id           String           @id @default(cuid())
+  deviceId     String
+  userId       String?
+  status       ActivationStatus @default(PENDING)
+  startedAt    DateTime         @default(now())
+  completedAt  DateTime?
+  expiresAt    DateTime?
+  ipHash       String?
+  userAgent    String?
+  attemptCount Int              @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  device       Device           @relation(fields: [deviceId], references: [id])
+  user         User?            @relation(fields: [userId], references: [id])
+
+  @@index([deviceId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Batch {
+  id                String      @id @default(cuid())
+  supplierName      String
+  supplierReference String?
+  internalReference String      @unique
+  quantity          Int
+  receivedQuantity  Int         @default(0)
+  productionDate    DateTime?
+  shippedAt         DateTime?
+  receivedAt        DateTime?
+  shippingMethod    String?
+  status            BatchStatus @default(DRAFT)
+  notes             String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  devices           Device[]
+  importJobs        ImportJob[]
+
+  @@index([status])
+}
+
+model Organization {
+  id                   String                   @id @default(cuid())
+  name                 String
+  type                 OrganizationType         @default(OTHER)
+  slug                 String                   @unique
+  contactName          String?
+  contactEmail         String?
+  contactPhone         String?
+  status               OrganizationStatus       @default(PENDING)
+  discountCode         String?
+  discountPercentage   Float                    @default(0)
+  commissionPercentage Float                    @default(0)
+  landingTitle         String?
+  landingDescription   String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  devices              Device[]
+  memberships          OrganizationMembership[]
+  campaigns            Campaign[]
+  importJobs           ImportJob[]
+
+  @@index([status])
+  @@index([type])
+}
+
+model OrganizationMembership {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  role           MembershipRole   @default(VIEWER)
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([role])
+}
+
+model Campaign {
+  id                   String         @id @default(cuid())
+  organizationId       String
+  name                 String
+  slug                 String
+  description          String?
+  discountCode         String?
+  discountPercentage   Float          @default(0)
+  commissionPercentage Float          @default(0)
+  startAt              DateTime?
+  endAt                DateTime?
+  status               CampaignStatus @default(DRAFT)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  organization         Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, slug])
+  @@index([status])
+}
+
+model NotificationEvent {
+  id           String                @id @default(cuid())
+  userId       String?
+  deviceId     String?
+  profileId    String?
+  scanEventId  String?
+  channel      NotificationChannel   @default(LOCAL)
+  eventType    NotificationEventType
+  recipient    String?
+  status       NotificationStatus    @default(SIMULATED)
+  payload      String
+  errorMessage String?
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  user         User?                 @relation(fields: [userId], references: [id])
+  device       Device?               @relation(fields: [deviceId], references: [id])
+  profile      Profile?              @relation(fields: [profileId], references: [id])
+  scanEvent    ScanEvent?            @relation(fields: [scanEventId], references: [id])
+
+  @@index([eventType])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String?
+  action       String
+  entityType   String
+  entityId     String?
+  previousData String?
+  newData      String?
+  ipHash       String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  actor        User?    @relation("AuditActor", fields: [actorUserId], references: [id])
+
+  @@index([actorUserId])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+model ContactAction {
+  id          String            @id @default(cuid())
+  deviceId    String?
+  profileId   String?
+  scanEventId String?
+  action      ContactActionType
+  metadata    String?
+  ipHash      String?
+  userAgent   String?
+  createdAt   DateTime          @default(now())
+  device      Device?           @relation(fields: [deviceId], references: [id])
+  profile     Profile?          @relation(fields: [profileId], references: [id])
+  scanEvent   ScanEvent?        @relation(fields: [scanEventId], references: [id])
+
+  @@index([action])
+  @@index([deviceId])
+  @@index([profileId])
+  @@index([createdAt])
+}
+
+model ImportJob {
+  id             String          @id @default(cuid())
+  batchId        String?
+  organizationId String?
+  filename       String
+  status         ImportJobStatus @default(DRAFT)
+  totalRows      Int             @default(0)
+  validRows      Int             @default(0)
+  invalidRows    Int             @default(0)
+  errors         String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  batch          Batch?          @relation(fields: [batchId], references: [id])
+  organization   Organization?   @relation(fields: [organizationId], references: [id])
+  rows           ImportRow[]
+
+  @@index([status])
+}
+
+model ImportRow {
+  id          String    @id @default(cuid())
+  importJobId String
+  rowNumber   Int
+  publicCode  String?
+  publicUrl   String?
+  nfcUid      String?
+  productType ProductType?
+  isValid     Boolean   @default(false)
+  errors      String?
+  rawData     String
+  createdAt   DateTime  @default(now())
+  importJob   ImportJob @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+
+  @@index([importJobId])
+  @@index([isValid])
+}
+
+model SupportMessage {
+  id        String               @id @default(cuid())
+  userId    String?
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    SupportMessageStatus @default(NEW)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  user      User?                @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([createdAt])
+}
