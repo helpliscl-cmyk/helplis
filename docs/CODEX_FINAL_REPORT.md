@@ -1,117 +1,108 @@
 # Codex Final Report
 
-## 1. Resumen
+Fecha: 2026-07-11.
 
-Se construyó un MVP local funcional de HelPlis para identificación y contacto por QR/NFC. Incluye ficha pública, activación segura, auth local, dashboard de usuario, panel admin, lotes, import/export CSV, organizaciones, campañas, soporte, notificaciones locales, auditoría, analítica, seed demo, pruebas, CI y documentación.
+## Resumen ejecutivo
 
-## 2. Ruta exacta
+Se integró branding oficial de HelPlis, se rediseñó la experiencia pública, se mejoraron activación y ficha pública, se realizó benchmark público de SOSMee, se configuró el remote GitHub de forma segura y se preparó una migración Supabase con RLS/Storage. Vercel y DNS quedaron documentados para una fase posterior.
 
-`C:\Users\sebau\OneDrive\Escritorio\helplis`
+## Mejoras aplicadas
 
-## 3. Stack
+- Home nueva con foto oficial, propuesta de valor, beneficios, cómo funciona, usos, privacidad, instituciones, FAQ y CTA final.
+- Favicon, Open Graph, metadata canónica y assets optimizados.
+- Sistema visual con tokens CSS y componentes UI ajustados.
+- Login, registro, soporte, 404, error, dashboard/admin shell y activación con marca.
+- Ficha pública con jerarquía más clara, acciones móviles y feedback offline.
+- Test E2E robustecido para evitar colisiones de importación.
 
-Next.js 16 App Router, React 19, TypeScript estricto, Tailwind CSS, Prisma 6.19.3, SQLite, Zod, bcryptjs, iron-session, Vitest, Playwright, ESLint y Prettier.
+## Branding
 
-## 4. Arquitectura
+Assets fuente:
 
-`app/` contiene rutas. `components/` contiene UI neutra. `features/` contiene server actions por dominio. `lib/` contiene auth, seguridad, env, formato y constantes. `server/` contiene Prisma, servicios, notificaciones y analítica. `prisma/` contiene schema, migración SQL y seed.
+- `public/brand/source/helplis-icon-source.png`
+- `public/brand/source/helplis-logo-horizontal-source.png`
+- `public/brand/source/helplis-bracelet-campaign-source.png`
 
-## 5. Funciones operativas
+Optimización:
 
-- Home provisional.
-- Registro, login y logout locales.
-- Activación por publicCode + activationCode.
-- Ficha pública `/p/[publicCode]` con privacidad, escaneo, acciones y ubicación voluntaria.
-- Dashboard usuario con dispositivos, perfiles, contactos, escaneos, ubicaciones, privacidad, cuenta y soporte.
-- Admin con métricas, dispositivos, lotes, importaciones, usuarios, perfiles, organizaciones, campañas, escaneos, notificaciones, auditoría, errores y settings.
-- Landing institucional `/o/[organizationSlug]`.
-- Soporte local `/support`.
+- PNG/WebP para logo, icono y fotografía.
+- Favicon, Apple touch icon, social icon y OG image.
+- Documentación en `docs/BRAND_ASSETS.md` y `docs/BRAND_SYSTEM.md`.
 
-## 6. Modelo de datos
+## Rutas modificadas
 
-Implementa `User`, `Device`, `Profile`, `EmergencyContact`, `ScanEvent`, `Activation`, `Batch`, `Organization`, `OrganizationMembership`, `Campaign`, `NotificationEvent`, `AuditLog`, `ContactAction`, `ImportJob`, `ImportRow` y `SupportMessage`.
+- `/`
+- `/login`
+- `/register`
+- `/activate`
+- `/activate/[publicCode]`
+- `/p/[publicCode]`
+- `/support`
+- `/_not-found`
+- error boundary global
+- shell dashboard/admin
 
-## 7. Comandos
+## GitHub
 
-```bash
-npm run dev
-npm run build
-npm run lint
-npm run typecheck
-npm run test
-npm run test:e2e
-npm run db:migrate
-npm run db:reset
-npm run db:seed
-npm run generate:batch
-npm run import:batch
-npm run export:batch
-npm run verify:batch
-```
+- Repositorio inspeccionado: `https://github.com/helpliscl-cmyk/helplis`
+- Visibilidad: Public
+- Remote local: `origin https://github.com/helpliscl-cmyk/helplis.git`
+- Rama local de trabajo: `feature/supabase-integration`
+- Se hizo `git fetch origin`.
+- No se hizo force push.
+- Remoto `main` tiene historial independiente con 2 commits y 3 PNG en raíz.
 
-## 8. Credenciales demo
+## Supabase
 
-Password demo: `HelPlisDemo123!`
+- Proyecto observado: `helpliscl-cmyk's Project`
+- Project ref visible: `ndzcpzjkseugqffyeslr`
+- Tablas observadas: 0 en `public`
+- Migración preparada: `supabase/migrations/20260711180000_helplis_mvp.sql`
+- Incluye tablas, índices, RLS, función de ficha pública, bucket `profile-photos` y políticas de Storage.
+- No se ejecutó la migración en Supabase durante esta fase para evitar una configuración parcialmente aplicada sin adaptar runtime/secretos.
 
-- `admin@demo.helplis.cl`
-- `soporte@demo.helplis.cl`
-- `colegio@demo.helplis.cl`
-- `usuario@demo.helplis.cl`
-- `familia@demo.helplis.cl`
+## Variables
 
-Activación demo: `HLP009` + `ACT-HLP009`.
+Actualizadas en `.env.example`:
 
-## 9. Datos demo
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_JWT_SECRET`
+- `SUPABASE_STORAGE_PROFILE_BUCKET`
 
-Seed ficticio con 5 usuarios, 20 dispositivos, perfiles infantiles, adulto mayor, médico, mascotas, objetos/equipaje, 2 organizaciones, 2 campañas, contactos, escaneos, ubicaciones consentidas, notificaciones, importación demo, soporte y auditoría.
+## Pruebas
 
-## 10. Pruebas y resultados
+| Comando | Resultado |
+| --- | --- |
+| `npm run lint` | OK |
+| `npm run typecheck` | OK |
+| `npm run test` | OK, 4 archivos y 33 tests |
+| `npm run build` | OK |
+| `npm run test:e2e` | Bloqueado por servidor Next ya activo en 3108. |
+| `npx playwright test --config=playwright.existing.config.ts` | OK, 1 E2E contra `localhost:3108`. |
 
-- `npm run lint`: exitoso.
-- `npm run typecheck`: exitoso.
-- `npm run test`: 4 archivos, 33 pruebas, todas exitosas.
-- `npm run test:e2e`: 1 flujo Chromium exitoso.
-- `npm run build`: exitoso, 35 rutas generadas/renderizadas.
+## Vercel y Cloudflare
 
-## 11. Problemas encontrados
+- Vercel no se configuró por problema de verificación de cuenta.
+- No se tocaron DNS.
+- Documentos actualizados:
+  - `docs/VERCEL_DEPLOYMENT.md`
+  - `docs/CLOUDFLARE_SETUP.md`
 
-`prisma migrate dev` devolvió un error opaco del schema engine en este entorno Windows/OneDrive. Se fijó Prisma en 6.19.3 y se guardó una migración SQL generada por Prisma, aplicada con un script idempotente `scripts/db-migrate.ts`. Prisma Client, seed y app funcionan correctamente.
+## Riesgos
 
-## 12. Decisiones
+- Supabase todavía no está conectado al runtime de la app.
+- GitHub remoto `main` y local tienen historias independientes.
+- El E2E estándar requiere detener el server 3108 o usar la config alternativa agregada.
+- La app sigue usando SQLite local como backend efectivo.
 
-- UI neutra sin branding definitivo.
-- `Device` como entidad genérica.
-- SQLite local y adaptadores mock.
-- Notificaciones locales persistidas.
-- Ubicación solo con consentimiento explícito.
-- E2E en puerto aislado `3107`.
+## Recomendaciones antes de producción
 
-## 13. Pendientes reales
-
-- Supabase PostgreSQL/Auth/Storage/RLS.
-- Rate limiting distribuido.
-- Emails/SMS/WhatsApp reales.
-- Pagos y proceso de compra.
-- Branding definitivo.
-- Revisión legal de privacidad y consentimiento.
-- QA con dispositivos físicos QR/NFC.
-
-## 14. Riesgos antes de producción
-
-No usar SQLite en serverless. No fabricar lotes reales sin cerrar formato CSV, rotación de activation codes, QA NFC/QR, soporte, privacidad y operación de incidentes. Agregar monitoreo, backups, WAF/rate limits y revisión de datos sensibles.
-
-## 15. Próximos pasos externos
-
-Supabase: crear proyecto, migrar schema a PostgreSQL, mapear auth, diseñar RLS y storage.  
-Vercel: conectar repo, variables, build y dominio.  
-GitHub: crear remoto, proteger rama y activar CI.  
-Cloudflare: DNS, SSL Full/Strict, reglas de cache y protección básica.  
-CRM: definir proveedor y API de leads/organizaciones.
-
-## 16. Variables requeridas
-
-Ver `.env.example`: `DATABASE_URL`, `NEXT_PUBLIC_APP_URL`, `AUTH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PHONE`, variables Supabase, proveedores de email/SMS/WhatsApp/storage y `SENTRY_DSN`.
-
-## 17. Recomendaciones antes de lote real
-
-Validar impresión QR, escritura NFC, formato de UID, almacenamiento seguro del activationCode en empaque, proceso de reposición, política de soporte, términos de privacidad y prueba piloto con datos mínimos.
+1. Resolver verificación de Vercel.
+2. Subir rama a GitHub y revisar CI.
+3. Aplicar migración Supabase en ambiente de prueba.
+4. Implementar adaptadores Supabase Auth/DB/Storage.
+5. Revisar términos, privacidad y consentimiento legal chileno.
+6. Definir precios/catálogo antes de publicar venta.
+7. Configurar correo transaccional real y notificaciones.

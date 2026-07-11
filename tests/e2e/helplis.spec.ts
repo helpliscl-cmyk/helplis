@@ -13,7 +13,9 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByText(batchReference)).toBeVisible();
 
   await page.goto("/admin/imports");
-  await page.getByLabel("CSV").fill("E2E01,https://helplis.cl/p/E2E01,04:E2:E2:01,WRISTBAND");
+  const importCode = `E2E${Date.now().toString().slice(-6)}`;
+  const importUid = `04:E2:${Date.now().toString().slice(-2)}:${Math.floor(Math.random() * 90 + 10)}`;
+  await page.getByLabel("CSV").fill(`${importCode},https://helplis.cl/p/${importCode},${importUid},WRISTBAND`);
   await page.getByRole("button", { name: "Validar e importar filas válidas" }).click();
   await expect(page.getByText("1 válidas")).toBeVisible();
 
