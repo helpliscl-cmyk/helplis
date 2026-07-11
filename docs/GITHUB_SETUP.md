@@ -48,6 +48,7 @@ Luego crear PR o revisar manualmente cómo reconciliar `main`. Si se desea que `
 ## Verificaciones pendientes tras push
 
 - Confirmar que `.env`, SQLite y `node_modules` no aparecen en GitHub.
-- Confirmar que `.github/workflows` existe en la rama subida.
-- Revisar resultado de Actions/CI.
+- `.github/workflows/ci.yml` existe en la rama subida.
+- CI no se ejecutó con el push de rama porque el workflow actual corre en `push` a `main` y en `pull_request`.
+- Crear PR para disparar Actions/CI.
 - Corregir cualquier error de CI antes de merge.
