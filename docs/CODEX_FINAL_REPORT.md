@@ -62,7 +62,9 @@ Commits creados en esta fase:
 - `feat: implement helplis brand experience`
 - `feat: prepare supabase and deployment setup`
 - `test: stabilize e2e against existing server`
-- `docs: record github push status`
+- `docs: record github push auth blocker`
+- `docs: record github push success`
+- `docs: clarify github credential account`
 
 ## Supabase
 
