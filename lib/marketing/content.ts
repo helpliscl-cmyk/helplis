@@ -33,7 +33,7 @@ export const HOME_FAQS = [
   },
   {
     question: "¿Cuánto cuesta?",
-    answer: "1 pulsera: $18.000. Pack 2: $28.000. Pack 3: $35.000.",
+    answer: "1 pulsera: $18.000. Pack 2: $28.000. Pack 3: $35.000. El envío se paga aparte.",
   },
   {
     question: "¿Puedo cambiar la información después?",
@@ -50,7 +50,7 @@ export const HOME_FAQS = [
   },
   {
     question: "¿Necesita aplicación?",
-    answer: "No. La ficha pública se abre desde el navegador del teléfono.",
+    answer: "No es obligatorio instalar una aplicación. La ficha pública se abre desde el navegador del teléfono.",
   },
   {
     question: "¿Qué pasa si el teléfono no tiene NFC?",
