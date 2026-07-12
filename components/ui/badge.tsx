@@ -27,11 +27,78 @@ export function Badge({
 }
 
 export function statusTone(status: string): keyof typeof tones {
-  if (["ACTIVE", "ACTIVATED", "COMPLETED", "RECEIVED", "FOUND", "SENT", "SIMULATED", "PAID", "DELIVERED"].includes(status)) {
+  if (
+    [
+      "ACTIVE",
+      "ACTIVATED",
+      "COMPLETED",
+      "RECEIVED",
+      "FOUND",
+      "SENT",
+      "SIMULATED",
+      "PAID",
+      "DELIVERED",
+      "VERIFIED",
+      "FULLY_VERIFIED",
+      "AVAILABLE",
+      "APPROVED",
+      "WON",
+      "READY",
+    ].includes(status)
+  ) {
     return "green";
   }
-  if (["PENDING", "AVAILABLE", "RESERVED", "DRAFT", "VALIDATED", "NEW", "CONTACTED", "QUOTED"].includes(status)) return "blue";
-  if (["LOST", "SUSPENDED", "PARTIALLY_RECEIVED", "PAYMENT_PENDING", "PREPARING", "SHIPPED"].includes(status)) return "amber";
-  if (["DEACTIVATED", "DAMAGED", "FAILED", "BLOCKED", "CANCELLED"].includes(status)) return "red";
+  if (
+    [
+      "PENDING",
+      "RESERVED",
+      "DRAFT",
+      "VALIDATED",
+      "NEW",
+      "CONTACTED",
+      "QUOTED",
+      "CODES_GENERATED",
+      "FILES_READY",
+      "UID_VERIFIED",
+      "QR_VERIFIED",
+      "NFC_VERIFIED",
+      "PAYMENT_REPORTED",
+      "PACKING",
+    ].includes(status)
+  )
+    return "blue";
+  if (
+    [
+      "LOST",
+      "SUSPENDED",
+      "PARTIALLY_RECEIVED",
+      "PAYMENT_PENDING",
+      "PREPARING",
+      "SHIPPED",
+      "IN_PRODUCTION",
+      "IN_TRANSIT",
+      "SENT_TO_SUPPLIER",
+      "AWAITING_STOCK",
+      "WAITING_CUSTOMER",
+      "FOLLOW_UP",
+    ].includes(status)
+  )
+    return "amber";
+  if (
+    [
+      "DEACTIVATED",
+      "DAMAGED",
+      "FAILED",
+      "BLOCKED",
+      "CANCELLED",
+      "REJECTED",
+      "QR_MISMATCH",
+      "NFC_MISMATCH",
+      "UID_MISMATCH",
+      "MISSING",
+      "CLOSED",
+    ].includes(status)
+  )
+    return "red";
   return "neutral";
 }

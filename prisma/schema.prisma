@@ -423,53 +423,54 @@ model User {
 }
 
 model Device {
-  id                     String                   @id @default(cuid())
-  internalSequence       Int?
-  publicCode             String                   @unique
-  publicUrl              String                   @unique
-  qrContent              String?
-  nfcContent             String?
-  nfcUid                 String?                  @unique
-  activationCodeHash     String
-  activationCodeUsedAt   DateTime?
-  activationAttempts     Int                      @default(0)
-  activationBlockedUntil DateTime?
-  batchId                String?
-  productType            ProductType              @default(WRISTBAND)
-  status                 DeviceStatus             @default(AVAILABLE)
-  ownerId                String?
-  profileId              String?
-  organizationId         String?
-  inventoryLocationId    String?
-  productionStatus       DeviceProductionStatus   @default(DRAFT)
-  verificationStatus     DeviceVerificationStatus @default(PENDING)
-  inventoryStatus        InventoryStatus          @default(IN_PRODUCTION)
-  activatedAt            DateTime?
-  reservedAt             DateTime?
-  soldAt                 DateTime?
-  packedAt               DateTime?
-  shippedAt              DateTime?
-  deliveredAt            DateTime?
-  suspendedAt            DateTime?
-  deactivatedAt          DateTime?
-  replacedById           String?
-  createdAt              DateTime                 @default(now())
-  updatedAt              DateTime                 @updatedAt
-  deletedAt              DateTime?
-  batch                  Batch?                   @relation(fields: [batchId], references: [id])
-  owner                  User?                    @relation("DeviceOwner", fields: [ownerId], references: [id])
-  profile                Profile?                 @relation(fields: [profileId], references: [id])
-  organization           Organization?            @relation(fields: [organizationId], references: [id])
-  inventoryLocation      InventoryLocation?       @relation(fields: [inventoryLocationId], references: [id])
-  replacedBy             Device?                  @relation("Replacement", fields: [replacedById], references: [id])
-  replacements           Device[]                 @relation("Replacement")
-  scanEvents             ScanEvent[]
-  activations            Activation[]
-  notificationEvents     NotificationEvent[]
-  contactActions         ContactAction[]
-  physicalVerifications  PhysicalVerification[]
-  orderItems             OrderItem[]
-  supportTickets         SupportTicket[]
+  id                      String                   @id @default(cuid())
+  internalSequence        Int?
+  publicCode              String                   @unique
+  publicUrl               String                   @unique
+  qrContent               String?
+  nfcContent              String?
+  nfcUid                  String?                  @unique
+  activationCodeHash      String
+  activationCodeEncrypted String?
+  activationCodeUsedAt    DateTime?
+  activationAttempts      Int                      @default(0)
+  activationBlockedUntil  DateTime?
+  batchId                 String?
+  productType             ProductType              @default(WRISTBAND)
+  status                  DeviceStatus             @default(AVAILABLE)
+  ownerId                 String?
+  profileId               String?
+  organizationId          String?
+  inventoryLocationId     String?
+  productionStatus        DeviceProductionStatus   @default(DRAFT)
+  verificationStatus      DeviceVerificationStatus @default(PENDING)
+  inventoryStatus         InventoryStatus          @default(IN_PRODUCTION)
+  activatedAt             DateTime?
+  reservedAt              DateTime?
+  soldAt                  DateTime?
+  packedAt                DateTime?
+  shippedAt               DateTime?
+  deliveredAt             DateTime?
+  suspendedAt             DateTime?
+  deactivatedAt           DateTime?
+  replacedById            String?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  deletedAt               DateTime?
+  batch                   Batch?                   @relation(fields: [batchId], references: [id])
+  owner                   User?                    @relation("DeviceOwner", fields: [ownerId], references: [id])
+  profile                 Profile?                 @relation(fields: [profileId], references: [id])
+  organization            Organization?            @relation(fields: [organizationId], references: [id])
+  inventoryLocation       InventoryLocation?       @relation(fields: [inventoryLocationId], references: [id])
+  replacedBy              Device?                  @relation("Replacement", fields: [replacedById], references: [id])
+  replacements            Device[]                 @relation("Replacement")
+  scanEvents              ScanEvent[]
+  activations             Activation[]
+  notificationEvents      NotificationEvent[]
+  contactActions          ContactAction[]
+  physicalVerifications   PhysicalVerification[]
+  orderItems              OrderItem[]
+  supportTickets          SupportTicket[]
 
   @@index([status])
   @@index([productionStatus])
