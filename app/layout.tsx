@@ -1,21 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { HOME_SEO } from "@/lib/marketing/content";
 
 export const metadata: Metadata = {
   title: {
     default: "HelPlis",
     template: "%s | HelPlis",
   },
-  description:
-    "Pulseras y tags con QR y NFC para conectar a quien encuentra con quien puede ayudar, sin GPS propio, bateria ni aplicacion obligatoria.",
+  description: HOME_SEO.description,
   metadataBase: new URL("https://helplis.cl"),
   alternates: {
     canonical: "https://helplis.cl",
   },
   openGraph: {
     title: "HelPlis",
-    description:
-      "Identificacion simple y actualizable mediante QR y NFC para personas, mascotas y objetos.",
+    description: "Identificación simple y actualizable mediante QR y NFC para personas, mascotas y objetos.",
     url: "https://helplis.cl",
     siteName: "HelPlis",
     locale: "es_CL",
