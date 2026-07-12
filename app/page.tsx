@@ -419,6 +419,18 @@ export default function Home() {
             <p className="text-base leading-7 text-[var(--brand-muted)]">
               Revisemos una alianza para entregar identificacion, acompanamiento de activacion y beneficios por comunidad.
             </p>
+            <div className="grid gap-2 text-sm leading-6 text-[var(--brand-muted)]">
+              {[
+                "Beneficio o descuento por institucion cuando este definido.",
+                "Codigo o landing institucional para ordenar solicitudes.",
+                "Acompanamiento para activar pulseras y resolver dudas.",
+              ].map((item) => (
+                <p key={item} className="flex items-start gap-2">
+                  <CheckCircle2 aria-hidden className="mt-1 h-4 w-4 text-[var(--brand-accent)]" />
+                  <span>{item}</span>
+                </p>
+              ))}
+            </div>
             <ButtonLink href="/quiero-helplis?tipo=institucion" variant="accent">
               <School aria-hidden className="h-4 w-4" />
               Solicitar alianza institucional
