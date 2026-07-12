@@ -21,7 +21,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ fileId: st
   if (!file) return NextResponse.json({ error: "Archivo no encontrado" }, { status: 404 });
 
   const resolvedPath = path.resolve(file.storagePath);
-  if (!resolvedPath.startsWith(productionRoot)) {
+  const relativePath = path.relative(productionRoot, resolvedPath);
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
     return NextResponse.json({ error: "Ruta de archivo invalida" }, { status: 400 });
   }
 

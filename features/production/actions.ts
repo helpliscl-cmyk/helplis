@@ -14,6 +14,14 @@ import { recordPhysicalVerification } from "@/server/operations/physical-verific
 import { importSupplierUidReturn } from "@/server/operations/supplier-uid-import";
 
 const adminRoles = ["ADMIN", "SUPER_ADMIN", "SUPPORT"] as const;
+const manufacturerExportFormats: ManufacturerExportFormat[] = [
+  "URLS_ONLY",
+  "CSV",
+  "XLSX",
+  "QR_PNG_ZIP",
+  "QR_SVG_ZIP",
+  "FULL_PACKAGE",
+];
 
 function text(formData: FormData, key: string, fallback = "") {
   return String(formData.get(key) ?? fallback).trim();
@@ -144,7 +152,8 @@ export async function createSampleProductionBatchAction(formData: FormData) {
 export async function generateManufacturerExportAction(formData: FormData) {
   const user = await requireRole([...adminRoles]);
   const batchId = text(formData, "batchId");
-  const format = text(formData, "format", "FULL_PACKAGE") as ManufacturerExportFormat;
+  const requestedFormat = text(formData, "format", "FULL_PACKAGE") as ManufacturerExportFormat;
+  const format = manufacturerExportFormats.includes(requestedFormat) ? requestedFormat : "FULL_PACKAGE";
   if (!batchId) redirect("/admin/production?error=batch");
 
   await generateManufacturerExportPackage({ batchId, format, generatedBy: user.id });

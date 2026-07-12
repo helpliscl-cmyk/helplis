@@ -7,6 +7,7 @@ import { OFFICIAL_CONTACT } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/server/db/client";
 import { notificationProvider } from "@/server/notifications/provider";
+import { checkRateLimit } from "@/server/security/rate-limit";
 
 const supportSchema = z.object({
   name: z.string().min(2),
@@ -33,6 +34,9 @@ export async function createSupportMessageAction(formData: FormData) {
     message: formData.get("message"),
   });
   if (!parsed.success) redirect("/support?error=invalid");
+  if (!checkRateLimit(`support:${parsed.data.email}:${parsed.data.phone ?? ""}`, 5, 15 * 60 * 1000)) {
+    redirect("/support?error=rate-limit");
+  }
 
   const user = await getCurrentUser();
   const category = Object.values(SupportTicketCategory).includes(parsed.data.category as SupportTicketCategory)

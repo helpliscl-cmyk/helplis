@@ -6,6 +6,7 @@ import { InstitutionLeadStatus } from "@prisma/client";
 import { z } from "zod";
 import { requireRole } from "@/lib/auth/session";
 import { prisma } from "@/server/db/client";
+import { checkRateLimit } from "@/server/security/rate-limit";
 
 const institutionLeadSchema = z.object({
   institutionName: z.string().min(2),
@@ -38,6 +39,9 @@ export async function createInstitutionLeadAction(formData: FormData) {
     notes: formData.get("notes") || undefined,
   });
   if (!parsed.success) redirect("/instituciones/solicitar?error=invalid");
+  if (!checkRateLimit(`institution:${parsed.data.email}:${parsed.data.phone}`, 3, 60 * 60 * 1000)) {
+    redirect("/instituciones/solicitar?error=rate-limit");
+  }
 
   const lead = await prisma.institutionLead.create({
     data: {
