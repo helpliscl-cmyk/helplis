@@ -83,13 +83,211 @@ enum ActivationStatus {
 
 enum BatchStatus {
   DRAFT
+  CODES_GENERATED
+  FILES_READY
   GENERATED
   SENT_TO_SUPPLIER
+  SAMPLE_PRODUCTION
+  SAMPLE_SHIPPED
+  SAMPLE_RECEIVED
+  SAMPLE_APPROVED
   IN_PRODUCTION
+  MASS_PRODUCTION
+  MASS_PRODUCTION_COMPLETE
   SHIPPED
   PARTIALLY_RECEIVED
   RECEIVED
+  VERIFICATION_IN_PROGRESS
+  VERIFIED
   CANCELLED
+}
+
+enum ProductionMode {
+  SAMPLE
+  MASS_PRODUCTION
+  DEMO
+}
+
+enum DeviceProductionStatus {
+  DRAFT
+  CODES_GENERATED
+  FILES_READY
+  SENT_TO_SUPPLIER
+  IN_PRODUCTION
+  PRODUCED
+  SHIPPED
+  RECEIVED
+  VERIFIED
+  CANCELLED
+}
+
+enum DeviceVerificationStatus {
+  PENDING
+  QR_VERIFIED
+  NFC_VERIFIED
+  UID_VERIFIED
+  FULLY_VERIFIED
+  QR_MISMATCH
+  NFC_MISMATCH
+  UID_MISMATCH
+  DAMAGED
+  MISSING
+  REJECTED
+}
+
+enum InventoryStatus {
+  IN_PRODUCTION
+  IN_TRANSIT
+  RECEIVED
+  PENDING_VERIFICATION
+  VERIFIED
+  AVAILABLE
+  RESERVED
+  SOLD
+  PACKING
+  SHIPPED
+  DELIVERED
+  ACTIVATED
+  RETURNED
+  DAMAGED
+  LOST
+}
+
+enum ProductionFileType {
+  CSV
+  XLSX
+  QR_PNG_ZIP
+  QR_SVG_ZIP
+  FULL_PACKAGE_ZIP
+  INSTRUCTIONS
+  SUPPLIER_RETURN
+  VERIFICATION_REPORT
+}
+
+enum ProductionFileStatus {
+  GENERATED
+  READY
+  DOWNLOADED
+  ARCHIVED
+  FAILED
+}
+
+enum SupplierUidImportStatus {
+  DRAFT
+  PREVIEWED
+  VALIDATED
+  IMPORTED
+  PARTIALLY_IMPORTED
+  FAILED
+}
+
+enum OrderPaymentStatus {
+  PENDING
+  PAYMENT_LINK_SENT
+  PAYMENT_REPORTED
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum OrderFulfillmentStatus {
+  NEW
+  CONFIRMED
+  AWAITING_STOCK
+  RESERVED
+  PACKING
+  READY_TO_SHIP
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum OrderItemStatus {
+  PENDING
+  RESERVED
+  ASSIGNED
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RELEASED
+}
+
+enum PaymentProviderType {
+  MANUAL
+  MERCADO_PAGO
+  FLOW
+  WEBPAY
+  OTHER
+}
+
+enum PaymentMethod {
+  TRANSFER
+  CASH
+  CARD
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  REPORTED
+  APPROVED
+  REJECTED
+  REFUNDED
+  CANCELLED
+}
+
+enum ShipmentStatus {
+  DRAFT
+  READY
+  SHIPPED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum SupportTicketCategory {
+  ACTIVATION
+  ORDER
+  SHIPPING
+  PAYMENT
+  DEVICE
+  PROFILE
+  PRIVACY
+  LOST_DEVICE
+  INSTITUTION
+  OTHER
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum InstitutionLeadStatus {
+  NEW
+  CONTACTED
+  MEETING
+  PROPOSAL
+  PILOT
+  NEGOTIATION
+  APPROVED
+  WON
+  LOST
+  FOLLOW_UP
 }
 
 enum OrganizationType {
@@ -216,56 +414,79 @@ model User {
   notificationEvents NotificationEvent[]
   auditLogs          AuditLog[]               @relation("AuditActor")
   supportMessages    SupportMessage[]
+  orders             Order[]
+  supportTickets     SupportTicket[]          @relation("SupportTicketUser")
+  assignedTickets    SupportTicket[]          @relation("SupportTicketAssignee")
 
   @@index([role])
   @@index([status])
 }
 
 model Device {
-  id                    String              @id @default(cuid())
-  publicCode            String              @unique
-  publicUrl             String              @unique
-  nfcUid                String?             @unique
-  activationCodeHash    String
-  activationCodeUsedAt  DateTime?
-  activationAttempts    Int                 @default(0)
+  id                     String                   @id @default(cuid())
+  internalSequence       Int?
+  publicCode             String                   @unique
+  publicUrl              String                   @unique
+  qrContent              String?
+  nfcContent             String?
+  nfcUid                 String?                  @unique
+  activationCodeHash     String
+  activationCodeUsedAt   DateTime?
+  activationAttempts     Int                      @default(0)
   activationBlockedUntil DateTime?
-  batchId               String?
-  productType           ProductType         @default(WRISTBAND)
-  status                DeviceStatus        @default(AVAILABLE)
-  ownerId               String?
-  profileId             String?
-  organizationId        String?
-  activatedAt           DateTime?
-  suspendedAt           DateTime?
-  deactivatedAt         DateTime?
-  replacedById          String?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  deletedAt             DateTime?
-  batch                 Batch?              @relation(fields: [batchId], references: [id])
-  owner                 User?               @relation("DeviceOwner", fields: [ownerId], references: [id])
-  profile               Profile?            @relation(fields: [profileId], references: [id])
-  organization          Organization?        @relation(fields: [organizationId], references: [id])
-  replacedBy            Device?             @relation("Replacement", fields: [replacedById], references: [id])
-  replacements          Device[]            @relation("Replacement")
-  scanEvents            ScanEvent[]
-  activations           Activation[]
-  notificationEvents    NotificationEvent[]
-  contactActions        ContactAction[]
+  batchId                String?
+  productType            ProductType              @default(WRISTBAND)
+  status                 DeviceStatus             @default(AVAILABLE)
+  ownerId                String?
+  profileId              String?
+  organizationId         String?
+  inventoryLocationId    String?
+  productionStatus       DeviceProductionStatus   @default(DRAFT)
+  verificationStatus     DeviceVerificationStatus @default(PENDING)
+  inventoryStatus        InventoryStatus          @default(IN_PRODUCTION)
+  activatedAt            DateTime?
+  reservedAt             DateTime?
+  soldAt                 DateTime?
+  packedAt               DateTime?
+  shippedAt              DateTime?
+  deliveredAt            DateTime?
+  suspendedAt            DateTime?
+  deactivatedAt          DateTime?
+  replacedById           String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  deletedAt              DateTime?
+  batch                  Batch?                   @relation(fields: [batchId], references: [id])
+  owner                  User?                    @relation("DeviceOwner", fields: [ownerId], references: [id])
+  profile                Profile?                 @relation(fields: [profileId], references: [id])
+  organization           Organization?            @relation(fields: [organizationId], references: [id])
+  inventoryLocation      InventoryLocation?       @relation(fields: [inventoryLocationId], references: [id])
+  replacedBy             Device?                  @relation("Replacement", fields: [replacedById], references: [id])
+  replacements           Device[]                 @relation("Replacement")
+  scanEvents             ScanEvent[]
+  activations            Activation[]
+  notificationEvents     NotificationEvent[]
+  contactActions         ContactAction[]
+  physicalVerifications  PhysicalVerification[]
+  orderItems             OrderItem[]
+  supportTickets         SupportTicket[]
 
   @@index([status])
+  @@index([productionStatus])
+  @@index([verificationStatus])
+  @@index([inventoryStatus])
   @@index([productType])
   @@index([batchId])
   @@index([ownerId])
   @@index([profileId])
   @@index([organizationId])
+  @@index([inventoryLocationId])
 }
 
 model Profile {
-  id                  String             @id @default(cuid())
+  id                  String              @id @default(cuid())
   ownerId             String?
-  type                ProfileType        @default(PERSON)
+  type                ProfileType         @default(PERSON)
   displayName         String
   legalName           String?
   alias               String?
@@ -276,7 +497,7 @@ model Profile {
   medications         String?
   bloodType           String?
   specialInstructions String?
-  preferredLanguage   String             @default("es")
+  preferredLanguage   String              @default("es")
   birthYear           Int?
   species             String?
   breed               String?
@@ -284,20 +505,20 @@ model Profile {
   objectDescription   String?
   rewardMessage       String?
   lostMessage         String?
-  showPhoto           Boolean            @default(false)
-  showMedicalInfo     Boolean            @default(false)
-  showContactNames    Boolean            @default(true)
-  showPhoneNumbers    Boolean            @default(true)
-  showAge             Boolean            @default(false)
-  showLocationButton  Boolean            @default(true)
-  showWhatsAppButton  Boolean            @default(true)
-  showCallButton      Boolean            @default(true)
-  showMessageButton   Boolean            @default(true)
-  isPublic            Boolean            @default(true)
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  showPhoto           Boolean             @default(false)
+  showMedicalInfo     Boolean             @default(false)
+  showContactNames    Boolean             @default(true)
+  showPhoneNumbers    Boolean             @default(true)
+  showAge             Boolean             @default(false)
+  showLocationButton  Boolean             @default(true)
+  showWhatsAppButton  Boolean             @default(true)
+  showCallButton      Boolean             @default(true)
+  showMessageButton   Boolean             @default(true)
+  isPublic            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
   deletedAt           DateTime?
-  owner               User?              @relation(fields: [ownerId], references: [id])
+  owner               User?               @relation(fields: [ownerId], references: [id])
   devices             Device[]
   contacts            EmergencyContact[]
   scanEvents          ScanEvent[]
@@ -330,11 +551,11 @@ model EmergencyContact {
 }
 
 model ScanEvent {
-  id                 String          @id @default(cuid())
+  id                 String              @id @default(cuid())
   deviceId           String
   profileId          String?
-  scannedAt          DateTime        @default(now())
-  scanMethod         ScanMethod      @default(UNKNOWN)
+  scannedAt          DateTime            @default(now())
+  scanMethod         ScanMethod          @default(UNKNOWN)
   ipHash             String?
   userAgent          String?
   deviceType         String?
@@ -346,14 +567,14 @@ model ScanEvent {
   latitude           Float?
   longitude          Float?
   locationAccuracy   Float?
-  locationPermission Boolean         @default(false)
+  locationPermission Boolean             @default(false)
   locationSharedAt   DateTime?
   referrer           String?
   sessionId          String?
-  eventStatus        ScanEventStatus @default(RECORDED)
-  createdAt          DateTime        @default(now())
-  device             Device          @relation(fields: [deviceId], references: [id])
-  profile            Profile?        @relation(fields: [profileId], references: [id])
+  eventStatus        ScanEventStatus     @default(RECORDED)
+  createdAt          DateTime            @default(now())
+  device             Device              @relation(fields: [deviceId], references: [id])
+  profile            Profile?            @relation(fields: [profileId], references: [id])
   notificationEvents NotificationEvent[]
   contactActions     ContactAction[]
 
@@ -385,24 +606,43 @@ model Activation {
 }
 
 model Batch {
-  id                String      @id @default(cuid())
-  supplierName      String
-  supplierReference String?
-  internalReference String      @unique
-  quantity          Int
-  receivedQuantity  Int         @default(0)
-  productionDate    DateTime?
-  shippedAt         DateTime?
-  receivedAt        DateTime?
-  shippingMethod    String?
-  status            BatchStatus @default(DRAFT)
-  notes             String?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  devices           Device[]
-  importJobs        ImportJob[]
+  id                     String                 @id @default(cuid())
+  supplierName           String
+  supplierContact        String?
+  supplierReference      String?
+  supplierQuoteReference String?
+  internalReference      String                 @unique
+  productModel           String?
+  productType            ProductType            @default(WRISTBAND)
+  color                  String?
+  chipType               String?
+  domain                 String                 @default("https://helplis.cl")
+  productionMode         ProductionMode         @default(DEMO)
+  quantity               Int
+  receivedQuantity       Int                    @default(0)
+  productionDate         DateTime?
+  sentToSupplierAt       DateTime?
+  productionStartedAt    DateTime?
+  productionCompletedAt  DateTime?
+  shippedAt              DateTime?
+  receivedAt             DateTime?
+  verifiedAt             DateTime?
+  shippingMethod         String?
+  status                 BatchStatus            @default(DRAFT)
+  notes                  String?
+  createdBy              String?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  devices                Device[]
+  importJobs             ImportJob[]
+  productionFiles        ProductionFile[]
+  supplierUidImports     SupplierUidImport[]
+  physicalVerifications  PhysicalVerification[]
+  supportTickets         SupportTicket[]
 
   @@index([status])
+  @@index([productionMode])
+  @@index([productType])
 }
 
 model Organization {
@@ -425,6 +665,8 @@ model Organization {
   memberships          OrganizationMembership[]
   campaigns            Campaign[]
   importJobs           ImportJob[]
+  institutionLeads     InstitutionLead[]
+  supportTickets       SupportTicket[]
 
   @@index([status])
   @@index([type])
@@ -551,18 +793,18 @@ model ImportJob {
 }
 
 model ImportRow {
-  id          String    @id @default(cuid())
+  id          String       @id @default(cuid())
   importJobId String
   rowNumber   Int
   publicCode  String?
   publicUrl   String?
   nfcUid      String?
   productType ProductType?
-  isValid     Boolean   @default(false)
+  isValid     Boolean      @default(false)
   errors      String?
   rawData     String
-  createdAt   DateTime  @default(now())
-  importJob   ImportJob @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  importJob   ImportJob    @relation(fields: [importJobId], references: [id], onDelete: Cascade)
 
   @@index([importJobId])
   @@index([isValid])
@@ -586,25 +828,26 @@ model SupportMessage {
 }
 
 model PurchaseIntent {
-  id             String   @id @default(cuid())
-  name           String
-  phone          String
-  email          String?
-  commune        String
-  region         String   @default("")
-  packId         Int      @default(1)
-  quantity       Int      @default(1)
-  unitPrice      Int      @default(18000)
-  totalPrice     Int      @default(18000)
-  shippingPending Boolean @default(true)
-  primaryUse     String
-  contactAccepted Boolean @default(false)
-  source         String?
-  origin         String?
-  message        String?
-  status         String   @default("NEW")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  phone           String
+  email           String?
+  commune         String
+  region          String   @default("")
+  packId          Int      @default(1)
+  quantity        Int      @default(1)
+  unitPrice       Int      @default(18000)
+  totalPrice      Int      @default(18000)
+  shippingPending Boolean  @default(true)
+  primaryUse      String
+  contactAccepted Boolean  @default(false)
+  source          String?
+  origin          String?
+  message         String?
+  status          String   @default("NEW")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  order           Order?
 
   @@index([status])
   @@index([packId])
@@ -622,4 +865,265 @@ model AnalyticsEvent {
 
   @@index([eventName])
   @@index([createdAt])
+}
+
+model ProductionFile {
+  id          String               @id @default(cuid())
+  batchId     String
+  type        ProductionFileType
+  filename    String
+  storagePath String
+  checksum    String
+  generatedAt DateTime             @default(now())
+  generatedBy String?
+  version     Int                  @default(1)
+  status      ProductionFileStatus @default(GENERATED)
+  metadata    String?
+  batch       Batch                @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@index([type])
+  @@index([status])
+  @@index([generatedAt])
+}
+
+model SupplierUidImport {
+  id              String                  @id @default(cuid())
+  batchId         String
+  filename        String
+  status          SupplierUidImportStatus @default(DRAFT)
+  totalRows       Int                     @default(0)
+  validRows       Int                     @default(0)
+  invalidRows     Int                     @default(0)
+  duplicateRows   Int                     @default(0)
+  importedRows    Int                     @default(0)
+  errorReportPath String?
+  mapping         String?
+  preview         String?
+  createdAt       DateTime                @default(now())
+  completedAt     DateTime?
+  createdBy       String?
+  batch           Batch                   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PhysicalVerification {
+  id             String                   @id @default(cuid())
+  deviceId       String
+  batchId        String
+  qrExpected     String
+  qrObserved     String?
+  nfcExpected    String
+  nfcObserved    String?
+  nfcUidExpected String?
+  nfcUidObserved String?
+  qrStatus       DeviceVerificationStatus @default(PENDING)
+  nfcStatus      DeviceVerificationStatus @default(PENDING)
+  uidStatus      DeviceVerificationStatus @default(PENDING)
+  physicalStatus DeviceVerificationStatus @default(PENDING)
+  overallStatus  DeviceVerificationStatus @default(PENDING)
+  notes          String?
+  photoUrl       String?
+  verifiedBy     String?
+  verifiedAt     DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  device         Device                   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  batch          Batch                    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([batchId])
+  @@index([overallStatus])
+  @@index([verifiedAt])
+}
+
+model InventoryLocation {
+  id        String   @id @default(cuid())
+  name      String
+  warehouse String?
+  shelf     String?
+  box       String?
+  position  String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  devices   Device[]
+
+  @@index([name])
+  @@index([warehouse])
+}
+
+model Order {
+  id                String                 @id @default(cuid())
+  orderNumber       String                 @unique
+  leadId            String?                @unique
+  userId            String?
+  customerName      String
+  phone             String
+  email             String?
+  region            String
+  comuna            String
+  address           String?
+  addressNotes      String?
+  pack              String
+  quantity          Int
+  unitPrice         Int
+  subtotal          Int
+  shippingCost      Int                    @default(0)
+  total             Int
+  paymentStatus     OrderPaymentStatus     @default(PENDING)
+  fulfillmentStatus OrderFulfillmentStatus @default(NEW)
+  source            String?
+  notes             String?
+  trackingNumber    String?
+  carrier           String?
+  paidAt            DateTime?
+  packedAt          DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  lead              PurchaseIntent?        @relation(fields: [leadId], references: [id])
+  user              User?                  @relation(fields: [userId], references: [id])
+  items             OrderItem[]
+  payments          Payment[]
+  shipments         Shipment[]
+  supportTickets    SupportTicket[]
+
+  @@index([paymentStatus])
+  @@index([fulfillmentStatus])
+  @@index([createdAt])
+  @@index([leadId])
+  @@index([userId])
+}
+
+model OrderItem {
+  id          String          @id @default(cuid())
+  orderId     String
+  deviceId    String?
+  productType ProductType     @default(WRISTBAND)
+  unitPrice   Int
+  status      OrderItemStatus @default(PENDING)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  device      Device?         @relation(fields: [deviceId], references: [id])
+
+  @@index([orderId])
+  @@index([deviceId])
+  @@index([status])
+}
+
+model Payment {
+  id                String              @id @default(cuid())
+  orderId           String
+  provider          PaymentProviderType @default(MANUAL)
+  method            PaymentMethod       @default(TRANSFER)
+  amount            Int
+  currency          String              @default("CLP")
+  status            PaymentStatus       @default(PENDING)
+  externalReference String?
+  proofUrl          String?
+  reportedAt        DateTime?
+  approvedAt        DateTime?
+  rejectedAt        DateTime?
+  notes             String?
+  createdBy         String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  order             Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([provider])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Shipment {
+  id                  String         @id @default(cuid())
+  orderId             String
+  provider            String         @default("MANUAL")
+  carrier             String?
+  service             String?
+  trackingNumber      String?
+  cost                Int            @default(0)
+  status              ShipmentStatus @default(DRAFT)
+  shippedAt           DateTime?
+  estimatedDeliveryAt DateTime?
+  deliveredAt         DateTime?
+  notes               String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  order               Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+  @@index([trackingNumber])
+}
+
+model InstitutionLead {
+  id                   String                @id @default(cuid())
+  organizationId       String?
+  institutionName      String
+  type                 String
+  region               String
+  comuna               String
+  contactName          String
+  contactRole          String?
+  phone                String
+  email                String
+  estimatedQuantity    Int
+  estimatedDate        DateTime?
+  interest             String
+  notes                String?
+  status               InstitutionLeadStatus @default(NEW)
+  landingSlug          String?
+  institutionalCode    String?
+  discountPercentage   Float                 @default(0)
+  commissionPercentage Float                 @default(0)
+  metrics              String?
+  documents            String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  organization         Organization?         @relation(fields: [organizationId], references: [id])
+
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@index([organizationId])
+}
+
+model SupportTicket {
+  id             String                @id @default(cuid())
+  userId         String?
+  orderId        String?
+  deviceId       String?
+  batchId        String?
+  organizationId String?
+  category       SupportTicketCategory @default(OTHER)
+  status         SupportTicketStatus   @default(OPEN)
+  priority       SupportTicketPriority @default(NORMAL)
+  subject        String
+  description    String
+  assignedTo     String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  resolvedAt     DateTime?
+  user           User?                 @relation("SupportTicketUser", fields: [userId], references: [id])
+  assignee       User?                 @relation("SupportTicketAssignee", fields: [assignedTo], references: [id])
+  order          Order?                @relation(fields: [orderId], references: [id])
+  device         Device?               @relation(fields: [deviceId], references: [id])
+  batch          Batch?                @relation(fields: [batchId], references: [id])
+  organization   Organization?         @relation(fields: [organizationId], references: [id])
+
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([orderId])
+  @@index([deviceId])
+  @@index([batchId])
+  @@index([organizationId])
 }

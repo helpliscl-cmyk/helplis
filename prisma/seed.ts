@@ -47,6 +47,16 @@ const demoActivationCodes: Record<string, string> = {
 };
 
 async function resetDatabase() {
+  await prisma.supportTicket.deleteMany();
+  await prisma.shipment.deleteMany();
+  await prisma.payment.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.institutionLead.deleteMany();
+  await prisma.physicalVerification.deleteMany();
+  await prisma.supplierUidImport.deleteMany();
+  await prisma.productionFile.deleteMany();
+  await prisma.inventoryLocation.deleteMany();
   await prisma.analyticsEvent.deleteMany();
   await prisma.purchaseIntent.deleteMany();
   await prisma.contactAction.deleteMany();
