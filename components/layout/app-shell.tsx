@@ -18,16 +18,17 @@ const dashboardLinks = [
 
 const adminLinks = [
   ["/admin", "Admin"],
+  ["/admin/leads", "Leads"],
   ["/admin/devices", "Dispositivos"],
   ["/admin/batches", "Lotes"],
   ["/admin/imports", "Importaciones"],
   ["/admin/users", "Usuarios"],
   ["/admin/profiles", "Perfiles"],
   ["/admin/organizations", "Organizaciones"],
-  ["/admin/campaigns", "Campanas"],
+  ["/admin/campaigns", "Campañas"],
   ["/admin/scans", "Escaneos"],
   ["/admin/notifications", "Notificaciones"],
-  ["/admin/audit", "Auditoria"],
+  ["/admin/audit", "Auditoría"],
   ["/admin/errors", "Errores"],
   ["/admin/settings", "Ajustes"],
 ];
@@ -49,7 +50,7 @@ export function AppShell({
           <form action={logoutAction}>
             <Button variant="ghost" type="submit">
               <LogOut aria-hidden className="h-4 w-4" />
-              Cerrar sesion
+              Cerrar sesión
             </Button>
           </form>
         </div>

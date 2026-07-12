@@ -20,12 +20,12 @@ export default async function LoginPage({
         </div>
         <Card className="w-full p-5">
           <CardHeader>
-            <CardTitle>Iniciar sesion</CardTitle>
+            <CardTitle>Iniciar sesión</CardTitle>
             <CardDescription>Accede para gestionar perfiles, dispositivos, contactos y privacidad.</CardDescription>
           </CardHeader>
           {params.error ? (
             <p className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-              Credenciales invalidas o usuario no activo.
+              Credenciales inválidas o usuario no activo.
             </p>
           ) : null}
           <form action={loginAction} className="grid gap-4">

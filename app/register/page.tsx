@@ -21,7 +21,7 @@ export default async function RegisterPage({
         <Card className="w-full p-5">
           <CardHeader>
             <CardTitle>Crear cuenta</CardTitle>
-            <CardDescription>Comienza con los datos del responsable. Luego podras activar una pulsera o tag.</CardDescription>
+            <CardDescription>Comienza con los datos del responsable. Luego podrás activar una pulsera o tag.</CardDescription>
           </CardHeader>
           {params.error ? (
             <p className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
@@ -47,9 +47,9 @@ export default async function RegisterPage({
             </Button>
           </form>
           <p className="mt-5 text-sm text-[var(--brand-muted)]">
-            Ya tienes cuenta?{" "}
+            ¿Ya tienes cuenta?{" "}
             <Link href="/login" className="underline">
-              Inicia sesion
+              Inicia sesión
             </Link>
           </p>
         </Card>

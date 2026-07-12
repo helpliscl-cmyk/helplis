@@ -27,11 +27,11 @@ export function Badge({
 }
 
 export function statusTone(status: string): keyof typeof tones {
-  if (["ACTIVE", "ACTIVATED", "COMPLETED", "RECEIVED", "FOUND", "SENT", "SIMULATED"].includes(status)) {
+  if (["ACTIVE", "ACTIVATED", "COMPLETED", "RECEIVED", "FOUND", "SENT", "SIMULATED", "PAID", "DELIVERED"].includes(status)) {
     return "green";
   }
-  if (["PENDING", "AVAILABLE", "RESERVED", "DRAFT", "VALIDATED"].includes(status)) return "blue";
-  if (["LOST", "SUSPENDED", "PARTIALLY_RECEIVED"].includes(status)) return "amber";
-  if (["DEACTIVATED", "DAMAGED", "FAILED", "BLOCKED"].includes(status)) return "red";
+  if (["PENDING", "AVAILABLE", "RESERVED", "DRAFT", "VALIDATED", "NEW", "CONTACTED", "QUOTED"].includes(status)) return "blue";
+  if (["LOST", "SUSPENDED", "PARTIALLY_RECEIVED", "PAYMENT_PENDING", "PREPARING", "SHIPPED"].includes(status)) return "amber";
+  if (["DEACTIVATED", "DAMAGED", "FAILED", "BLOCKED", "CANCELLED"].includes(status)) return "red";
   return "neutral";
 }
