@@ -591,16 +591,23 @@ model PurchaseIntent {
   phone          String
   email          String?
   commune        String
+  region         String   @default("")
+  packId         Int      @default(1)
   quantity       Int      @default(1)
+  unitPrice      Int      @default(18000)
+  totalPrice     Int      @default(18000)
+  shippingPending Boolean @default(true)
   primaryUse     String
   contactAccepted Boolean @default(false)
   source         String?
+  origin         String?
   message        String?
   status         String   @default("NEW")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([status])
+  @@index([packId])
   @@index([primaryUse])
   @@index([createdAt])
 }
