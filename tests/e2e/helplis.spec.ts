@@ -1,23 +1,60 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+async function submitLead(page: Page, pack: "1" | "2" | "3", name: string, expectedPrice: string, primaryUse: string) {
+  await page.goto(`/quiero-helplis?pack=${pack}&source=e2e_pack_${pack}`);
+  await expect(page.getByRole("heading", { name: "Comprar HelPlis" })).toBeVisible();
+  await expect(page.getByText(expectedPrice).first()).toBeVisible();
+  await expect(page.getByText("El envío se cotiza o informa por separado.")).toBeVisible();
+
+  await page.getByLabel("Nombre").fill(name);
+  await page.getByRole("textbox", { name: "WhatsApp" }).fill("+56912340000");
+  await page.getByLabel("Correo opcional").fill(`lead-${pack}-${Date.now()}@example.test`);
+  await page.getByLabel("Comuna").fill("Santiago");
+  await page.getByLabel("Región").fill("Región Metropolitana");
+  await page.getByLabel("Uso principal").selectOption(primaryUse);
+  await page.getByLabel("Acepto que HelPlis me contacte").check();
+  await page.getByRole("button", { name: "Enviar solicitud de compra" }).click();
+
+  await expect(page.getByText("Solicitud registrada")).toBeVisible();
+  await expect(page.getByText(expectedPrice).first()).toBeVisible();
+  await expect(page.getByText("Envío: pendiente por separado")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Abrir WhatsApp" })).toHaveAttribute("href", /wa\.me\/56988455230/);
+}
 
 test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Si se pierde, ayudale a volver." })).toBeVisible();
-  await page.getByRole("link", { name: "Quiero mi HelPlis" }).first().click();
-  await expect(page.getByRole("heading", { name: "Quiero mi HelPlis" })).toBeVisible();
-  await page.getByLabel("Nombre").fill("Lead E2E");
-  await page.getByLabel("Telefono o WhatsApp").fill("+56912340000");
-  await page.getByLabel("Correo opcional").fill(`lead-${Date.now()}@example.test`);
-  await page.getByLabel("Comuna").fill("Santiago");
-  await page.getByLabel("Cantidad estimada").fill("2");
-  await page.getByLabel("Uso principal").selectOption("Adultos mayores");
-  await page.getByLabel("Acepto que HelPlis me contacte").check();
-  await page.getByRole("button", { name: "Registrar interes" }).click();
-  await expect(page.getByText("Interes registrado")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Si se pierde, ayúdale a volver." })).toBeVisible();
+  await expect(page.getByText("Desde").first()).toBeVisible();
+  await expect(page.getByText("$18.000").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Elige tu HelPlis" })).toBeVisible();
+  await expect(page.getByText("¿Tiene costo mensual?")).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Comprar", exact: true })).toBeVisible();
+  await page.locator("summary").click();
+  await expect(page.getByRole("link", { name: "Activar", exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  await page.goto("/");
+  await page.getByRole("link", { name: "Elegir pack de 2" }).click();
+  await expect(page).toHaveURL(/pack=2/);
+  await expect(page.getByText("Pack 2 HelPlis").first()).toBeVisible();
+  await expect(page.getByText("$28.000").first()).toBeVisible();
+
+  await submitLead(page, "2", "Lead Pack 2", "$28.000", "adulto_mayor");
+  await submitLead(page, "1", "Lead Pack 1", "$18.000", "niño");
+  await submitLead(page, "3", "Lead Pack 3", "$35.000", "persona_asistencia");
 
   await page.goto("/login");
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page.getByRole("heading", { name: "Panel administrador" })).toBeVisible();
+
+  await page.goto("/admin/leads");
+  await expect(page.getByRole("heading", { name: "Leads comerciales" })).toBeVisible();
+  await expect(page.getByText("Lead Pack 3")).toBeVisible();
+  await expect(page.getByText("Pack 3 HelPlis").first()).toBeVisible();
+  await expect(page.getByText("Pendiente").first()).toBeVisible();
 
   await page.goto("/admin/batches");
   const batchReference = `E2E-BATCH-${Date.now()}`;

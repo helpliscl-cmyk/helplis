@@ -122,3 +122,47 @@ Actualizadas en `.env.example`:
 5. Revisar términos, privacidad y consentimiento legal chileno.
 6. Definir precios/catálogo antes de publicar venta.
 7. Configurar correo transaccional real y notificaciones.
+
+## Actualización: pricing funnel retail
+
+Fecha: 2026-07-12.
+
+### Resumen
+
+Se incorporó el modelo comercial definitivo de compra única y se transformó el home/formulario en un funnel de compra sin checkout.
+
+### Precios implementados
+
+- 1 Pulsera HelPlis: $18.000 CLP.
+- Pack 2 HelPlis: $28.000 CLP, $14.000 c/u, ahorro $8.000.
+- Pack 3 HelPlis: $35.000 CLP, $11.667 c/u, ahorro $19.000.
+- Envío aparte.
+- Sin mensualidad obligatoria.
+
+### Cambios principales
+
+- Home con hero `Desde $18.000`, compra única y envío aparte.
+- Header con `Comprar HelPlis` como CTA principal y `Activar` secundario.
+- Sección `Elige tu HelPlis` con tres packs.
+- `/quiero-helplis?pack=1|2|3` preselecciona cantidad y precio.
+- Formulario solicita nombre, WhatsApp, correo opcional, comuna, región, uso principal, observaciones y aceptación de contacto.
+- Confirmación muestra resumen y enlace de WhatsApp prellenado.
+- Admin suma vista `/admin/leads` con pack, cantidad, precio, envío pendiente, estado, fecha y origen.
+- Eventos agregados: `PRICING_VIEWED`, `PACK_SELECTED`, `PACK_1_SELECTED`, `PACK_2_SELECTED`, `PACK_3_SELECTED`, `ORDER_INTENT_STARTED`, `ORDER_INTENT_COMPLETED`, `WHATSAPP_ORDER_CLICKED`.
+
+### Commits de esta fase
+
+- `add final retail pricing model`
+- `redesign pricing section`
+- `update purchase intent flow`
+- `add pack calculations and analytics`
+- `improve FAQ and commercial copy`
+- `fix typography and visible text`
+
+### Pendientes
+
+- Definir costo, cobertura y plazos de envío.
+- Implementar checkout cuando exista medio de pago confirmado.
+- Definir condiciones institucionales por cantidad.
+- Conectar CRM/notificaciones reales.
+- Verificar CI y producción después del deploy.

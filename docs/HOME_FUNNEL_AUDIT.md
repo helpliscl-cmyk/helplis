@@ -169,3 +169,49 @@ Las capturas despues se agregaran al terminar el rediseno.
 - Movil grande: secciones apiladas y cards legibles.
 - Tablet: grillas cambian sin solapes.
 - Escritorio: hero, producto, instituciones y FAQ mantienen jerarquia visual.
+
+## Post-price commercial review
+
+Fecha: 2026-07-12  
+Sitio revisado: `https://helplis.cl`
+
+La revisión publicada previa seguía comunicando interés/preventa: no mostraba precio, mantenía el texto de confianza inicial sobre testimonios no inventados y `/quiero-helplis` todavía decía que no había precio final. La nueva fase corrige esa brecha comercial.
+
+### Decisión comercial aplicada
+
+- Compra única.
+- Sin mensualidad obligatoria.
+- 1 pulsera: $18.000 CLP.
+- Pack 2: $28.000 CLP, $14.000 c/u, ahorro $8.000.
+- Pack 3: $35.000 CLP, $11.667 c/u, ahorro $19.000.
+- Envío aparte, sin inventar costo, cobertura ni plazo.
+- Cada pulsera incluye activación y perfil digital actualizable.
+
+### Ajustes de funnel
+
+1. Hero con precio de entrada: desde $18.000, compra única y envío aparte.
+2. Header con compra como CTA principal y `Activar` secundario.
+3. Sección `Elige tu HelPlis` con tres packs comparables.
+4. Se reemplazó confianza inicial por `Tecnología simple, ayuda real`.
+5. FAQ actualizado con mensualidad, envío, precios, GPS, batería, app, QR/NFC e instituciones.
+6. `/quiero-helplis` ahora recibe `?pack=1`, `?pack=2` o `?pack=3`, calcula el precio y guarda la intención.
+7. Confirmación ofrece WhatsApp prellenado sin enviar automáticamente.
+8. Admin suma vista de leads comerciales con pack, cantidad, precio, envío pendiente, estado y origen.
+
+### Riesgos pendientes
+
+- No existe checkout ni medio de pago definido, por lo que las solicitudes no deben marcarse como ventas.
+- El costo de envío requiere proceso operativo o cotización posterior.
+- Condiciones institucionales deben cotizarse por cantidad; no se publican descuentos fijos.
+
+### Capturas pricing update
+
+- Home escritorio: `docs/audit/screenshots/pricing-update/home-desktop.png`
+- Home móvil: `docs/audit/screenshots/pricing-update/home-mobile.png`
+- Sección de precios: `docs/audit/screenshots/pricing-update/pricing-section.png`
+- Formulario pack 1: `docs/audit/screenshots/pricing-update/form-pack-1.png`
+- Formulario pack 2: `docs/audit/screenshots/pricing-update/form-pack-2.png`
+- Formulario pack 3: `docs/audit/screenshots/pricing-update/form-pack-3.png`
+- Confirmación: `docs/audit/screenshots/pricing-update/confirmation.png`
+- FAQ: `docs/audit/screenshots/pricing-update/faq.png`
+- Header con Activar secundario: `docs/audit/screenshots/pricing-update/header-activar-secondary.png`
