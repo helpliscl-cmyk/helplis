@@ -3,7 +3,7 @@ import { Mail, Phone } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Field, Input, Textarea } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { createSupportMessageAction } from "@/features/contacts/support-actions";
 import { OFFICIAL_CONTACT } from "@/lib/constants";
 
@@ -50,6 +50,30 @@ export default async function SupportPage({
               <Field label="Teléfono">
                 <Input name="phone" type="tel" />
               </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Categoria">
+                  <Select name="category" defaultValue="OTHER">
+                    {["ACTIVATION", "ORDER", "SHIPPING", "PAYMENT", "DEVICE", "PROFILE", "PRIVACY", "LOST_DEVICE", "INSTITUTION", "OTHER"].map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Prioridad">
+                  <Select name="priority" defaultValue="NORMAL">
+                    {["LOW", "NORMAL", "HIGH", "URGENT"].map((priority) => (
+                      <option key={priority} value={priority}>{priority}</option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Codigo pulsera opcional">
+                  <Input name="publicCode" />
+                </Field>
+                <Field label="Pedido opcional">
+                  <Input name="orderNumber" placeholder="HLP-..." />
+                </Field>
+              </div>
               <Field label="Asunto">
                 <Input name="subject" required />
               </Field>
