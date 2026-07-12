@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { OrderFulfillmentStatus, OrderPaymentStatus } from "@prisma/client";
+import { OrderFulfillmentStatus, OrderPaymentStatus, PaymentMethod, PaymentStatus, ShipmentStatus } from "@prisma/client";
 import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { updateOrderAction } from "@/features/orders/actions";
+import { createManualPaymentAction, createManualShipmentAction } from "@/features/orders/payment-shipping-actions";
 import { formatDate } from "@/lib/formatting/format";
 import { HELPLIS_PACKS, formatCLP } from "@/lib/marketing/pricing";
 import { prisma } from "@/server/db/client";
@@ -136,20 +137,130 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
         </div>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-2">
         <Card>
-          <h2 className="font-semibold">Pagos</h2>
-          <p className="mt-2 text-sm text-neutral-600">{order.payments.length} registros manuales.</p>
+          <h2 className="mb-4 text-lg font-semibold">Pago manual</h2>
+          <form action={createManualPaymentAction} className="grid gap-4">
+            <input type="hidden" name="orderId" value={order.id} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Metodo">
+                <Select name="method" defaultValue={PaymentMethod.TRANSFER}>
+                  {Object.values(PaymentMethod).map((method) => (
+                    <option key={method} value={method}>{method}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Estado">
+                <Select name="status" defaultValue={PaymentStatus.REPORTED}>
+                  {Object.values(PaymentStatus).map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Monto">
+                <Input name="amount" type="number" min={0} defaultValue={order.total} />
+              </Field>
+              <Field label="Fecha reportada">
+                <Input name="reportedAt" type="datetime-local" />
+              </Field>
+              <Field label="Referencia externa">
+                <Input name="externalReference" />
+              </Field>
+              <Field label="Comprobante URL">
+                <Input name="proofUrl" />
+              </Field>
+            </div>
+            <Field label="Notas pago">
+              <Textarea name="notes" />
+            </Field>
+            <Button type="submit">Registrar pago</Button>
+          </form>
         </Card>
+
         <Card>
-          <h2 className="font-semibold">Despacho</h2>
-          <p className="mt-2 text-sm text-neutral-600">{order.shipments.length} registros manuales.</p>
-        </Card>
-        <Card>
-          <h2 className="font-semibold">Origen</h2>
-          <p className="mt-2 text-sm text-neutral-600">{order.lead ? `Lead ${formatDate(order.lead.createdAt)}` : order.source ?? "manual"}</p>
+          <h2 className="mb-4 text-lg font-semibold">Despacho manual</h2>
+          <form action={createManualShipmentAction} className="grid gap-4">
+            <input type="hidden" name="orderId" value={order.id} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Transportista">
+                <Input name="carrier" defaultValue={order.carrier ?? ""} />
+              </Field>
+              <Field label="Servicio">
+                <Input name="service" />
+              </Field>
+              <Field label="Tracking">
+                <Input name="trackingNumber" defaultValue={order.trackingNumber ?? ""} />
+              </Field>
+              <Field label="Costo">
+                <Input name="cost" type="number" min={0} defaultValue={order.shippingCost} />
+              </Field>
+              <Field label="Estado">
+                <Select name="status" defaultValue={ShipmentStatus.DRAFT}>
+                  {Object.values(ShipmentStatus).map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Fecha enviado">
+                <Input name="shippedAt" type="datetime-local" />
+              </Field>
+              <Field label="Entrega estimada">
+                <Input name="estimatedDeliveryAt" type="datetime-local" />
+              </Field>
+              <Field label="Fecha entregado">
+                <Input name="deliveredAt" type="datetime-local" />
+              </Field>
+            </div>
+            <Field label="Notas despacho">
+              <Textarea name="notes" />
+            </Field>
+            <Button type="submit">Registrar despacho</Button>
+          </form>
         </Card>
       </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card className="overflow-hidden p-0">
+          <div className="border-b border-neutral-100 p-4">
+            <h2 className="text-lg font-semibold">Historial de pagos</h2>
+          </div>
+          <div className="divide-y divide-neutral-100">
+            {order.payments.map((payment) => (
+              <div key={payment.id} className="p-4 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-medium">{formatCLP(payment.amount)} · {payment.method}</p>
+                  <Badge tone={statusTone(payment.status)}>{payment.status}</Badge>
+                </div>
+                <p className="mt-1 text-neutral-600">{payment.externalReference ?? "Sin referencia"} · {formatDate(payment.createdAt)}</p>
+              </div>
+            ))}
+            {!order.payments.length ? <p className="p-4 text-sm text-neutral-600">Sin pagos registrados.</p> : null}
+          </div>
+        </Card>
+
+        <Card className="overflow-hidden p-0">
+          <div className="border-b border-neutral-100 p-4">
+            <h2 className="text-lg font-semibold">Historial de despachos</h2>
+          </div>
+          <div className="divide-y divide-neutral-100">
+            {order.shipments.map((shipment) => (
+              <div key={shipment.id} className="p-4 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-medium">{shipment.carrier ?? "Manual"} · {shipment.trackingNumber ?? "Sin tracking"}</p>
+                  <Badge tone={statusTone(shipment.status)}>{shipment.status}</Badge>
+                </div>
+                <p className="mt-1 text-neutral-600">{formatCLP(shipment.cost)} · {formatDate(shipment.createdAt)}</p>
+              </div>
+            ))}
+            {!order.shipments.length ? <p className="p-4 text-sm text-neutral-600">Sin despachos registrados.</p> : null}
+          </div>
+        </Card>
+      </div>
+
+      <Card>
+        <h2 className="font-semibold">Origen</h2>
+        <p className="mt-2 text-sm text-neutral-600">{order.lead ? `Lead ${formatDate(order.lead.createdAt)}` : order.source ?? "manual"}</p>
+      </Card>
     </div>
   );
 }
