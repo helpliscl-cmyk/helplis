@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import {
   ArrowRight,
   Battery,
@@ -9,8 +8,10 @@ import {
   KeyRound,
   LocateFixed,
   LockKeyhole,
+  Menu,
   QrCode,
   ShieldCheck,
+  ShoppingBag,
   Smartphone,
   type LucideIcon,
 } from "lucide-react";
@@ -75,20 +76,50 @@ export default function Home() {
           <BrandLogo priority className="h-9 sm:h-10" />
           <nav className="hidden items-center gap-5 text-sm font-medium text-[var(--brand-muted)] lg:flex">
             <a href="#como-funciona" className="hover:text-[var(--brand-primary-dark)]">Cómo funciona</a>
-            <a href="#usos" className="hover:text-[var(--brand-primary-dark)]">Usos</a>
-            <Link href="/activate" className="hover:text-[var(--brand-primary-dark)]">Activar</Link>
+            <a href="#usos" className="hover:text-[var(--brand-primary-dark)]">Para quién sirve</a>
+            <a href="#pulsera" className="hover:text-[var(--brand-primary-dark)]">Pulsera</a>
             <a href="#instituciones" className="hover:text-[var(--brand-primary-dark)]">Instituciones</a>
             <a href="#faq" className="hover:text-[var(--brand-primary-dark)]">Preguntas frecuentes</a>
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
             <ButtonLink href="/login" variant="ghost" className="hidden sm:inline-flex">
               Iniciar sesión
             </ButtonLink>
-            <ButtonLink href="/activate" variant="accent">
+            <ButtonLink href="/activate" variant="secondary">
               <KeyRound aria-hidden className="h-4 w-4" />
               Activar
             </ButtonLink>
+            <ButtonLink href="/quiero-helplis" variant="accent">
+              <ShoppingBag aria-hidden className="h-4 w-4" />
+              Quiero mi HelPlis
+            </ButtonLink>
           </div>
+          <details className="group relative md:hidden">
+            <summary className="inline-flex min-h-11 cursor-pointer list-none items-center justify-center rounded-md border border-[var(--brand-border)] bg-white px-3 text-[var(--brand-text)]">
+              <Menu aria-hidden className="h-5 w-5" />
+              <span className="sr-only">Abrir menú</span>
+            </summary>
+            <div className="absolute right-0 top-13 grid w-[min(86vw,320px)] gap-2 rounded-lg border border-[var(--brand-border)] bg-white p-3 text-sm font-medium shadow-lg">
+              <a href="#como-funciona" className="rounded-md px-3 py-2 hover:bg-[#edf8fb]">Cómo funciona</a>
+              <a href="#usos" className="rounded-md px-3 py-2 hover:bg-[#edf8fb]">Para quién sirve</a>
+              <a href="#pulsera" className="rounded-md px-3 py-2 hover:bg-[#edf8fb]">Pulsera</a>
+              <a href="#instituciones" className="rounded-md px-3 py-2 hover:bg-[#edf8fb]">Instituciones</a>
+              <a href="#faq" className="rounded-md px-3 py-2 hover:bg-[#edf8fb]">Preguntas frecuentes</a>
+              <div className="mt-2 grid gap-2 border-t border-[var(--brand-border)] pt-3">
+                <ButtonLink href="/quiero-helplis" variant="accent">
+                  <ShoppingBag aria-hidden className="h-4 w-4" />
+                  Quiero mi HelPlis
+                </ButtonLink>
+                <ButtonLink href="/activate" variant="secondary">
+                  <KeyRound aria-hidden className="h-4 w-4" />
+                  Activar
+                </ButtonLink>
+                <ButtonLink href="/login" variant="ghost">
+                  Iniciar sesión
+                </ButtonLink>
+              </div>
+            </div>
+          </details>
         </div>
       </header>
 
