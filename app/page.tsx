@@ -16,10 +16,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Field, Input } from "@/components/ui/field";
-import { OFFICIAL_CONTACT, OFFICIAL_DOMAIN, PROJECT_NAME } from "@/lib/constants";
+import { OFFICIAL_CONTACT, OFFICIAL_DOMAIN } from "@/lib/constants";
 
 const benefits: Array<[string, string, LucideIcon]> = [
   ["QR + NFC", "Dos formas simples de abrir la ficha desde un teléfono compatible.", QrCode],
@@ -131,46 +130,42 @@ export default function Home() {
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center opacity-30"
+            className="object-cover object-center opacity-45"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/88 to-white/46" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/86 to-white/38" />
         </div>
-        <div className="mx-auto grid min-h-[76svh] max-w-7xl content-center gap-8 px-4 py-14 lg:grid-cols-[0.95fr_1.05fr] lg:py-20">
+        <div className="mx-auto grid min-h-[76svh] max-w-7xl content-center gap-8 px-4 py-14 lg:py-20">
           <div className="max-w-2xl space-y-7">
             <p className="inline-flex rounded-full border border-[var(--brand-border)] bg-white/85 px-3 py-1 text-sm font-medium text-[var(--brand-primary-dark)]">
-              Pequeña pulsera. Gran ayuda.
+              Pulsera inteligente con QR + NFC
             </p>
             <div className="space-y-4">
               <h1 className="text-5xl font-semibold leading-tight tracking-normal text-[var(--brand-text)] sm:text-6xl">
-                {PROJECT_NAME}
+                Si se pierde, ayúdale a volver.
               </h1>
               <p className="max-w-xl text-lg leading-8 text-[var(--brand-muted)]">
-                Identificación mediante QR y NFC para conectar rápido a quien encuentra con quien puede ayudar. Sin GPS propio, sin batería y sin aplicación obligatoria.
+                HelPlis permite que quien encuentre a una persona acceda a la información autorizada y contacte rápido a su familia.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/activate" variant="accent">
-                <KeyRound aria-hidden className="h-4 w-4" />
-                Activar una pulsera
+              <ButtonLink href="/quiero-helplis" variant="accent">
+                <ShoppingBag aria-hidden className="h-4 w-4" />
+                Quiero mi HelPlis
               </ButtonLink>
               <ButtonLink href="#como-funciona" variant="secondary">
                 <ArrowRight aria-hidden className="h-4 w-4" />
                 Ver cómo funciona
               </ButtonLink>
             </div>
-            <form action="/p" className="grid max-w-md gap-3 rounded-lg border border-[var(--brand-border)] bg-white/86 p-4 shadow-sm">
-              <Field label="Abrir ficha por codigo">
-                <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                  <Input name="code" placeholder="HLP009" aria-label="Codigo publico" />
-                  <Button type="submit" variant="secondary">
-                    <QrCode aria-hidden className="h-4 w-4" />
-                    Abrir
-                  </Button>
-                </div>
-              </Field>
-            </form>
+            <ul className="grid max-w-xl gap-2 text-sm font-medium text-[var(--brand-text)] sm:grid-cols-2">
+              {["Sin batería", "Sin aplicación obligatoria", "Información actualizable", "Ubicación compartida voluntariamente"].map((item) => (
+                <li key={item} className="flex items-center gap-2 rounded-md bg-white/82 px-3 py-2">
+                  <CheckCircle2 aria-hidden className="h-4 w-4 text-[var(--brand-accent)]" />
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="hidden lg:block" aria-hidden />
         </div>
       </section>
 
