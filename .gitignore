@@ -50,3 +50,6 @@ next-env.d.ts
 *.db-journal
 *.sqlite
 *.sqlite-journal
+
+# generated operational artifacts
+/data/production

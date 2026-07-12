@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import { BatchStatus, ProductType, ProductionMode } from "@prisma/client";
 import { requireRole } from "@/lib/auth/session";
 import { prisma } from "@/server/db/client";
+import {
+  generateManufacturerExportPackage,
+  type ManufacturerExportFormat,
+} from "@/server/operations/manufacturer-export";
 import { generateProductionCodesForBatch } from "@/server/operations/production-codes";
 
 const adminRoles = ["ADMIN", "SUPER_ADMIN", "SUPPORT"] as const;
@@ -133,4 +137,15 @@ export async function createSampleProductionBatchAction(formData: FormData) {
   formData.set("productType", text(formData, "productType", "WRISTBAND"));
   formData.set("domain", text(formData, "domain", "https://helplis.cl"));
   return createProductionBatchAction(formData);
+}
+
+export async function generateManufacturerExportAction(formData: FormData) {
+  const user = await requireRole([...adminRoles]);
+  const batchId = text(formData, "batchId");
+  const format = text(formData, "format", "FULL_PACKAGE") as ManufacturerExportFormat;
+  if (!batchId) redirect("/admin/production?error=batch");
+
+  await generateManufacturerExportPackage({ batchId, format, generatedBy: user.id });
+  revalidatePath(`/admin/production/${batchId}`);
+  redirect(`/admin/production/${batchId}/export?generated=1`);
 }

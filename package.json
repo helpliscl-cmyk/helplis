@@ -20,6 +20,8 @@
     "import:batch": "tsx scripts/import-batch.ts",
     "export:batch": "tsx scripts/export-batch.ts",
     "verify:batch": "tsx scripts/verify-batch.ts",
+    "production:generate": "tsx scripts/production-generate.ts",
+    "production:export": "tsx scripts/production-export.ts",
     "typecheck": "tsc --noEmit"
   },
   "prisma": {
@@ -30,8 +32,10 @@
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "iron-session": "^8.0.4",
+    "jszip": "^3.10.1",
     "lucide-react": "^1.24.0",
     "next": "16.2.10",
+    "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwind-merge": "^3.6.0",
@@ -43,6 +47,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitest/ui": "^4.1.10",
