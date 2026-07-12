@@ -159,6 +159,7 @@ enum NotificationEventType {
   DEVICE_SUSPENDED
   DEVICE_REACTIVATED
   SUPPORT_MESSAGE_CREATED
+  PURCHASE_INTENT_CREATED
 }
 
 enum NotificationStatus {
@@ -581,5 +582,25 @@ model SupportMessage {
   user      User?                @relation(fields: [userId], references: [id])
 
   @@index([status])
+  @@index([createdAt])
+}
+
+model PurchaseIntent {
+  id             String   @id @default(cuid())
+  name           String
+  phone          String
+  email          String?
+  commune        String
+  quantity       Int      @default(1)
+  primaryUse     String
+  contactAccepted Boolean @default(false)
+  source         String?
+  message        String?
+  status         String   @default("NEW")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([primaryUse])
   @@index([createdAt])
 }

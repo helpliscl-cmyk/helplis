@@ -47,6 +47,7 @@ const demoActivationCodes: Record<string, string> = {
 };
 
 async function resetDatabase() {
+  await prisma.purchaseIntent.deleteMany();
   await prisma.contactAction.deleteMany();
   await prisma.notificationEvent.deleteMany();
   await prisma.scanEvent.deleteMany();
