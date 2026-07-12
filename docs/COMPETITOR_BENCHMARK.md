@@ -1,65 +1,83 @@
 # Competitor Benchmark: SOSMee
 
-Fecha de revisión: 2026-07-11. Sitio público analizado en Chrome: `https://sosmee.com/es`.
+Fecha de revision inicial: 2026-07-11  
+Revision comercial adicional: 2026-07-11  
+Sitio publico analizado: `https://www.sosmee.com/`
 
-Este benchmark es solo referencial. No se copió código, textos, imágenes, estructura visual exacta, testimonios ni material comercial.
+Este benchmark es solo referencial. No se copio codigo, textos, imagenes, testimonios, precios, componentes ni estructura visual exacta.
 
-## Observaciones públicas
+## Observaciones publicas
 
-1. **Propuesta de valor:** identificación de emergencia con dispositivos QR/NFC y perfil digital.
-2. **Segmentos:** personas, niños, adultos mayores, deportistas, mascotas, objetos y empresas.
-3. **Navegación:** home, cómo funciona, activación, productos, empresas, MercadoLibre, login, registro, FAQ, contacto y legal.
-4. **Jerarquía home:** promoción, hero comercial, productos/packs, prueba de uso, casos, activación, CTA final y footer.
-5. **Problema:** pérdida, desorientación, accidente o extravío de personas/objetos.
-6. **Producto:** pulseras y tags con compra directa.
-7. **QR/NFC:** se presentan como doble vía de acceso a perfil.
-8. **Batería:** comunica que no requiere batería ni recargas.
-9. **Aplicación:** comunica que no requiere aplicación obligatoria.
-10. **Activación:** registro de cuenta, código único y completar perfil.
-11. **Ubicación:** se menciona en privacidad y ficha; debe tratarse con precisión para no parecer GPS.
-12. **Privacidad:** página legal con visibilidad de datos, salud opcional y derechos.
-13. **Contactos:** se orienta a llamadas/WhatsApp y contacto familiar.
-14. **Casos de uso:** familia, mascotas, deportistas, equipaje/llaves.
-15. **Confianza:** usa reseñas, descuentos, garantías y ecommerce.
-16. **Productos:** Band 2.0, Band, Tag.
-17. **Packs:** dúo, trío y familia.
-18. **Precios visibles:** se observaron precios y descuentos públicos en CLP.
-19. **Promociones:** fuerte presencia de flash sale y rebajas.
-20. **Garantías:** comunicación de garantía en fichas de producto.
-21. **Medios de pago:** checkout propio y alternativas como MercadoLibre; señales de pago seguro.
-22. **Envíos:** envío a Chile, costo calculado y umbral de envío gratis visible.
-23. **FAQ:** batería, agua, compatibilidad, pérdida, suscripción y envío.
-24. **Acceso clientes:** login y registro con Google.
-25. **Móvil:** no se observó overflow horizontal; navegación compacta con menú.
-26. **Accesibilidad:** navegación y formularios presentes; algunos carruseles muestran textos de control genéricos.
-27. **Rendimiento:** sitio Next.js con múltiples scripts de analítica/ads; carga funcional.
-28. **SEO:** títulos y descripciones por productos, contenido SEO largo y schema de producto.
-29. **Tecnologías detectables:** Next.js, scripts de Google, Meta/Facebook Pixel, TikTok Pixel, checkout/ecommerce y almacenamiento CDN.
-30. **Fortalezas:** claridad comercial, catálogo, activación explicada, legal visible y ecommerce completo.
-31. **Debilidades:** tono promocional intenso, dependencia de descuentos/reseñas, posible mezcla entre emergencia y venta, y riesgo de confundir ubicación con rastreo si no se explica bien.
-32. **Oportunidades HelPlis:** posicionar una experiencia más sobria, humana, transparente en privacidad, enfocada en Chile y preparada para organizaciones.
+1. Propuesta de valor: identificacion de emergencia con dispositivos QR/NFC y perfil digital.
+2. Segmentos: personas, ninos, adultos mayores, deportistas, mascotas, objetos y empresas.
+3. Navegacion: home, como funciona, activacion, productos, empresas, marketplace, login, registro, FAQ, contacto y legal.
+4. Jerarquia home: hero comercial, producto, catalogo/packs, confianza, testimonios, funcionamiento, casos de uso, activacion y CTA final.
+5. Problema: perdida, desorientacion, accidente o extravio de personas/objetos.
+6. Producto: pulseras y tags con compra directa.
+7. QR/NFC: se presentan como doble via de acceso a perfil.
+8. Bateria: comunica que no requiere bateria ni recargas.
+9. Aplicacion: comunica que no requiere aplicacion obligatoria.
+10. Activacion: registro de cuenta, codigo unico y completar perfil.
+11. Ubicacion: se comunica como apoyo al reencuentro; debe tratarse con precision para no parecer GPS propio.
+12. Privacidad: visibilidad de datos, salud opcional, legal y derechos.
+13. Contactos: orientacion a llamadas/WhatsApp y contacto familiar.
+14. Casos de uso: familia, adultos mayores, mascotas, deportistas, equipaje y llaves.
+15. Confianza: reseñas, descuentos, garantias, medios de pago y ecommerce.
+16. Productos: pulsera, tag y packs familiares.
+17. Precios visibles: se observaron precios y descuentos publicos en CLP.
+18. Promociones: fuerte presencia de venta flash y rebajas.
+19. Garantias: comunicacion de garantia y devolucion.
+20. Medios de pago: senales de pago seguro y marketplace.
+21. Envios: envio a Chile y beneficios de compra visibles.
+22. FAQ: bateria, agua, compatibilidad, perdida, suscripcion y envio.
+23. Acceso clientes: login, registro y activacion separados del CTA de compra.
+24. SEO: titulos, descripciones, contenido largo y enfoque por producto/caso de uso.
+25. Fortalezas: claridad comercial, catalogo, activacion explicada, legal visible y ecommerce completo.
+26. Debilidades: tono promocional intenso, dependencia de descuentos/reseñas y riesgo de confundir ubicacion con rastreo si no se explica bien.
+
+## Metodo comercial observado
+
+1. Abre con un problema emocional y entendible antes de explicar tecnologia.
+2. El primer CTA comercial apunta a compra, no a activacion.
+3. La activacion queda como flujo de cliente existente.
+4. El producto aparece temprano con beneficios simples.
+5. Los productos y packs tienen precio, promocion y senales de confianza.
+6. Los beneficios de compra se repiten cerca del catalogo.
+7. Los casos de uso se ordenan desde personas/familia hacia mascotas, deportes y objetos.
+8. La explicacion de funcionamiento usa pasos cortos y accionables.
+9. El cierre vuelve al problema y repite CTA comercial.
+10. El footer refuerza soluciones, soporte, legal y acceso de clientes.
+
+## Aprendizajes aplicables a HelPlis
+
+1. Priorizar visitantes nuevos que aun no compran.
+2. Usar "Quiero mi HelPlis" como CTA principal mientras no exista checkout.
+3. Mantener "Activar" e "Iniciar sesion" visibles, pero secundarios.
+4. Mostrar la pulsera como producto, no como modulo tecnico.
+5. Explicar problemas cotidianos sin dramatizar ni usar miedo excesivo.
+6. Convertir privacidad en confianza, no en advertencia legal.
+7. No inventar precios, convenios, materiales, colores, garantia, resistencia al agua ni testimonios.
+8. Comunicar instituciones como alianza comercial, no como arquitectura interna.
+9. Usar senales verificables mientras no haya testimonios reales: QR + NFC, sin bateria, sin app obligatoria, soporte directo y diseno pensado en Chile.
+10. Preparar la estructura para testimonios verificados futuros.
 
 ## Matriz comparativa
 
-| Funcionalidad | SOSMee | HelPlis actual | Mejora propuesta | Prioridad | Esfuerzo | Riesgo | Estado |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Branding | Marca visible y ecommerce maduro | Logo no integrado inicialmente | Assets oficiales, favicon, OG, tokens | Alta | Medio | Bajo | Aplicado |
-| Home | Comercial, productos y promos | MVP provisional | Home propia con foto oficial y privacidad clara | Alta | Medio | Bajo | Aplicado |
-| QR + NFC | Mensaje central | Funcional en textos | Explicación breve y técnica | Alta | Bajo | Bajo | Aplicado |
-| Sin batería/app | Visible en producto | Mencionado parcialmente | Beneficios explícitos sin exagerar | Alta | Bajo | Bajo | Aplicado |
-| GPS/ubicación | Presente como tema legal/comercial | Botón de ubicación con consentimiento | Aclarar que no hay GPS propio ni rastreo | Alta | Bajo | Bajo | Aplicado |
-| Activación | Registro + código | Formulario único técnico | Progreso por pasos y privacidad inicial | Alta | Medio | Medio | Aplicado |
-| Ficha pública | Perfil de emergencia | Acciones funcionales | Jerarquía urgente y feedback offline | Alta | Medio | Medio | Aplicado |
-| Catálogo/precios | Productos y packs | Sin precios definidos | No inventar precios hasta decisión comercial | Media | Bajo | Bajo | Pendiente comercial |
-| Instituciones | Página empresas | Modelo admin/org existe | Mensaje público sobrio para colegios/fundaciones/empresas | Media | Bajo | Bajo | Aplicado en home |
-| Legal | Privacidad y términos visibles | Docs internas | Preparar páginas públicas legales futuras | Media | Medio | Medio | Pendiente |
-| Ecommerce | Checkout, envío, pago | No aplica | Definir si HelPlis venderá directo o por contacto | Media | Alto | Medio | Pendiente |
-| Login/registro | Brandeado | Local provisional | Marca integrada y copy menos técnico | Media | Bajo | Bajo | Aplicado |
-| SEO | Metadata por producto | Metadata básica | Canonical, OG y descripción precisa | Alta | Bajo | Bajo | Aplicado |
-| Rendimiento | Muchos scripts externos | App local liviana | Mantener liviano al desplegar | Media | Bajo | Bajo | Recomendado |
-| Supabase | No benchmark privado | SQLite local | Migración con Auth, RLS y Storage | Alta | Alto | Alto | Preparado |
-| GitHub/CI | No aplica | CI local existente | Remote configurado, push seguro por rama | Alta | Medio | Medio | Parcial |
+| Tema | SOSMee | HelPlis antes | Cambio recomendado |
+| --- | --- | --- | --- |
+| Hero | Beneficio y compra | Marca + activacion | Beneficio emocional + CTA comercial |
+| CTA | Compra directa | Activar | Quiero mi HelPlis |
+| Activacion | Cliente existente | Objetivo dominante | Acceso visible pero secundario |
+| Producto | Temprano y concreto | Fondo visual | Seccion propia de pulsera |
+| Precio | Visible | No definido | No inventar; usar interes/preventa |
+| Confianza | Reviews, pago, envio | Privacidad tecnica | Senales legitimas y soporte directo |
+| Instituciones | Negocio/empresas | MVP/lotes/importaciones | Alianzas para colegios e instituciones |
+| Privacidad | Legal y beneficios | Correcta pero defensiva | Explicacion simple y tranquilizadora |
+| SEO | Producto/casos | Basico | Pulsera QR/NFC, ninos, adulto mayor, Chile |
+| Conversion | Ecommerce | Sin lead comercial | `/quiero-helplis` con registro de interes |
 
-## Recomendación de posicionamiento
+## Recomendacion de posicionamiento
 
-HelPlis debe diferenciarse por calma, precisión y privacidad. La comunicación debe evitar el lenguaje de vigilancia o promesas absolutas. La frase base recomendada es: QR y NFC para ayudar al reencuentro, sin GPS propio, sin batería y sin aplicación obligatoria.
+HelPlis debe diferenciarse por calma, precision y privacidad. La comunicacion debe evitar vigilancia, promesas absolutas y lenguaje tecnico. La frase base recomendada es: QR y NFC para ayudar al reencuentro, sin GPS propio, sin bateria y sin aplicacion obligatoria.
+
+SOSMee usa un enfoque de ecommerce maduro con promocion, precios y prueba social. HelPlis, en esta etapa, debe diferenciarse por claridad, confianza, preventa honesta y foco en Chile.
