@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { updateOrderAction } from "@/features/orders/actions";
+import { releaseOrderDevicesAction, reserveOrderDevicesAction } from "@/features/orders/fulfillment-actions";
 import { createManualPaymentAction, createManualShipmentAction } from "@/features/orders/payment-shipping-actions";
 import { formatDate } from "@/lib/formatting/format";
 import { HELPLIS_PACKS, formatCLP } from "@/lib/marketing/pricing";
@@ -109,7 +110,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
 
       <Card className="overflow-hidden p-0">
         <div className="border-b border-neutral-100 p-4">
-          <h2 className="text-lg font-semibold">Unidades</h2>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold">Unidades</h2>
+            <div className="flex flex-wrap gap-2">
+              <form action={reserveOrderDevicesAction}>
+                <input type="hidden" name="orderId" value={order.id} />
+                <Button type="submit" variant="secondary">Reservar FIFO</Button>
+              </form>
+              <form action={releaseOrderDevicesAction}>
+                <input type="hidden" name="orderId" value={order.id} />
+                <Button type="submit" variant="ghost">Liberar</Button>
+              </form>
+              <Link className="rounded-md border border-neutral-300 px-3 py-2 text-sm" href={`/admin/orders/${order.id}/packing`}>
+                Packing
+              </Link>
+            </div>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-[820px] text-left text-sm">
