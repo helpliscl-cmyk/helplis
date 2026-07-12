@@ -1,4 +1,4 @@
-import { Activity, Bell, Building2, Package, QrCode, Users } from "lucide-react";
+import { Activity, Bell, Building2, Package, QrCode, ShoppingBag, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { getAdminMetrics } from "@/server/analytics/metrics";
 
@@ -9,6 +9,7 @@ export default async function AdminPage() {
     { label: "Dispositivos", value: metrics.devices, Icon: QrCode },
     { label: "Activación", value: `${metrics.activationRate}%`, Icon: Activity },
     { label: "Perfiles", value: metrics.profiles, Icon: Users },
+    { label: "Leads", value: metrics.purchaseIntents, Icon: ShoppingBag },
     { label: "Organizaciones", value: metrics.organizations, Icon: Building2 },
     { label: "Notificaciones", value: metrics.notifications, Icon: Bell },
   ];
@@ -28,6 +29,23 @@ export default async function AdminPage() {
           </Card>
         ))}
       </div>
+      <Card>
+        <h2 className="font-semibold">Embudo comercial</h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div>
+            <div className="text-2xl font-semibold">{metrics.pricingViews}</div>
+            <div className="text-sm text-neutral-600">Vistas de precios</div>
+          </div>
+          <div>
+            <div className="text-2xl font-semibold">{metrics.orderIntentCompleted}</div>
+            <div className="text-sm text-neutral-600">Solicitudes completadas</div>
+          </div>
+          <div>
+            <div className="text-2xl font-semibold">{metrics.whatsappOrderClicks}</div>
+            <div className="text-sm text-neutral-600">Clicks a WhatsApp</div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

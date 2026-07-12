@@ -14,6 +14,10 @@ export async function getAdminMetrics() {
     lostDevices,
     organizations,
     notifications,
+    purchaseIntents,
+    pricingViews,
+    orderIntentCompleted,
+    whatsappOrderClicks,
   ] = await Promise.all([
     prisma.batch.count(),
     prisma.device.count(),
@@ -27,6 +31,10 @@ export async function getAdminMetrics() {
     prisma.device.count({ where: { status: "LOST" } }),
     prisma.organization.count({ where: { status: "ACTIVE" } }),
     prisma.notificationEvent.count(),
+    prisma.purchaseIntent.count(),
+    prisma.analyticsEvent.count({ where: { eventName: "PRICING_VIEWED" } }),
+    prisma.analyticsEvent.count({ where: { eventName: "ORDER_INTENT_COMPLETED" } }),
+    prisma.analyticsEvent.count({ where: { eventName: "WHATSAPP_ORDER_CLICKED" } }),
   ]);
 
   return {
@@ -43,6 +51,10 @@ export async function getAdminMetrics() {
     lostDevices,
     organizations,
     notifications,
+    purchaseIntents,
+    pricingViews,
+    orderIntentCompleted,
+    whatsappOrderClicks,
   };
 }
 
