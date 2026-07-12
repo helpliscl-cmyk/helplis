@@ -22,6 +22,7 @@
     "verify:batch": "tsx scripts/verify-batch.ts",
     "production:generate": "tsx scripts/production-generate.ts",
     "production:export": "tsx scripts/production-export.ts",
+    "production:verify": "tsx scripts/production-verify.ts",
     "production:import-uid": "tsx scripts/production-import-uid.ts",
     "typecheck": "tsc --noEmit"
   },

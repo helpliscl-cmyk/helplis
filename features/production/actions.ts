@@ -10,6 +10,7 @@ import {
   type ManufacturerExportFormat,
 } from "@/server/operations/manufacturer-export";
 import { generateProductionCodesForBatch } from "@/server/operations/production-codes";
+import { recordPhysicalVerification } from "@/server/operations/physical-verification";
 import { importSupplierUidReturn } from "@/server/operations/supplier-uid-import";
 
 const adminRoles = ["ADMIN", "SUPER_ADMIN", "SUPPORT"] as const;
@@ -176,4 +177,27 @@ export async function importSupplierUidReturnAction(formData: FormData) {
 
   revalidatePath(`/admin/production/${batchId}`);
   redirect(`/admin/production/${batchId}/supplier-return?import=${importJob.id}`);
+}
+
+export async function recordPhysicalVerificationAction(formData: FormData) {
+  const user = await requireRole([...adminRoles]);
+  const batchId = text(formData, "batchId");
+  const publicCode = text(formData, "publicCode");
+  if (!batchId || !publicCode) redirect(`/admin/production/${batchId || ""}/verification?error=device`);
+
+  await recordPhysicalVerification({
+    batchId,
+    publicCode,
+    qrObserved: text(formData, "qrObserved"),
+    nfcObserved: text(formData, "nfcObserved"),
+    nfcUidObserved: text(formData, "nfcUidObserved"),
+    damaged: formData.get("damaged") === "on",
+    missing: formData.get("missing") === "on",
+    notes: text(formData, "notes"),
+    photoUrl: text(formData, "photoUrl"),
+    verifiedBy: user.id,
+  });
+
+  revalidatePath(`/admin/production/${batchId}`);
+  redirect(`/admin/production/${batchId}/verification?verified=${encodeURIComponent(publicCode)}`);
 }
