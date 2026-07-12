@@ -10,6 +10,7 @@ import {
   type ManufacturerExportFormat,
 } from "@/server/operations/manufacturer-export";
 import { generateProductionCodesForBatch } from "@/server/operations/production-codes";
+import { importSupplierUidReturn } from "@/server/operations/supplier-uid-import";
 
 const adminRoles = ["ADMIN", "SUPER_ADMIN", "SUPPORT"] as const;
 
@@ -148,4 +149,31 @@ export async function generateManufacturerExportAction(formData: FormData) {
   await generateManufacturerExportPackage({ batchId, format, generatedBy: user.id });
   revalidatePath(`/admin/production/${batchId}`);
   redirect(`/admin/production/${batchId}/export?generated=1`);
+}
+
+export async function importSupplierUidReturnAction(formData: FormData) {
+  const user = await requireRole([...adminRoles]);
+  const batchId = text(formData, "batchId");
+  const dryRun = formData.get("dryRun") === "on";
+  const pasted = text(formData, "csv");
+  const uploaded = formData.get("file");
+  let filename = text(formData, "filename", "supplier-return.csv");
+  let buffer: Buffer | null = pasted ? Buffer.from(pasted, "utf8") : null;
+
+  if (!buffer && uploaded instanceof File && uploaded.size > 0) {
+    filename = uploaded.name;
+    buffer = Buffer.from(await uploaded.arrayBuffer());
+  }
+  if (!batchId || !buffer) redirect(`/admin/production/${batchId || ""}/supplier-return?error=file`);
+
+  const importJob = await importSupplierUidReturn({
+    batchId,
+    filename,
+    buffer,
+    dryRun,
+    createdBy: user.id,
+  });
+
+  revalidatePath(`/admin/production/${batchId}`);
+  redirect(`/admin/production/${batchId}/supplier-return?import=${importJob.id}`);
 }
