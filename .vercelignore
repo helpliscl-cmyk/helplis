@@ -1,0 +1,13 @@
+.env*
+!.env.example
+
+.next
+coverage
+node_modules
+playwright-report
+test-results
+
+prisma/*.db
+prisma/*.db-journal
+prisma/*.sqlite
+prisma/*.sqlite-journal
