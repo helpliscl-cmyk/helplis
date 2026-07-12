@@ -21,6 +21,22 @@ export interface NotificationProvider {
   sendLocal(input: NotificationPayload): Promise<void>;
 }
 
+export const NOTIFICATION_TEMPLATES = {
+  PURCHASE_REQUEST_RECEIVED: "Solicitud recibida",
+  ORDER_CREATED: "Pedido creado",
+  PAYMENT_PENDING: "Pago pendiente",
+  PAYMENT_REPORTED: "Pago reportado",
+  PAYMENT_CONFIRMED: "Pago confirmado",
+  ORDER_PACKING: "Pedido en preparacion",
+  ORDER_SHIPPED: "Pedido enviado",
+  ORDER_DELIVERED: "Pedido entregado",
+  ACTIVATION_REMINDER: "Recordatorio de activacion",
+  ACTIVATION_COMPLETED: "Activacion completada",
+  DEVICE_SCANNED: "Pulsera escaneada",
+  LOCATION_SHARED: "Ubicacion compartida",
+  TICKET_RECEIVED: "Ticket recibido",
+} as const;
+
 async function createLocalNotification(input: NotificationPayload, channel: NotificationChannel) {
   await prisma.notificationEvent.create({
     data: {

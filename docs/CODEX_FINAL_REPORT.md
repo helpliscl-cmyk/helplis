@@ -1,169 +1,47 @@
-# Codex Final Report
+# Codex final report
 
-Fecha: 2026-07-11.
+Date: 2026-07-12
 
-## Resumen ejecutivo
+## Summary
 
-Se integró branding oficial de HelPlis, se rediseñó la experiencia pública, se mejoraron activación y ficha pública, se realizó benchmark público de SOSMee, se configuró el remote GitHub de forma segura y se preparó una migración Supabase con RLS/Storage. Vercel y DNS quedaron documentados para una fase posterior.
+HelPlis now has an operational backbone for demo/sample production, supplier files, UID import, physical verification, inventory, leads-to-orders, manual payments, manual shipping, reservation, packing, activation cards, operations dashboard, institutions and support.
 
-## Mejoras aplicadas
+## Implemented architecture
 
-- Home nueva con foto oficial, propuesta de valor, beneficios, cómo funciona, usos, privacidad, instituciones, FAQ y CTA final.
-- Favicon, Open Graph, metadata canónica y assets optimizados.
-- Sistema visual con tokens CSS y componentes UI ajustados.
-- Login, registro, soporte, 404, error, dashboard/admin shell y activación con marca.
-- Ficha pública con jerarquía más clara, acciones móviles y feedback offline.
-- Test E2E robustecido para evitar colisiones de importación.
+- Prisma operational model for batches, production files, supplier UID imports, verification, inventory, orders, payments, shipments, institution leads and support tickets.
+- Admin routes under `/admin/*`.
+- CLI commands for production generation/export/import/verification.
+- Supplier package generation without activation codes.
+- Activation codes stored hashed and encrypted for authorized packing reveal.
 
-## Branding
+## Validation status
 
-Assets fuente:
+During development, lint and typecheck passed repeatedly after each module. Final full validation is recorded in the deployment notes for this run.
 
-- `public/brand/source/helplis-icon-source.png`
-- `public/brand/source/helplis-logo-horizontal-source.png`
-- `public/brand/source/helplis-bracelet-campaign-source.png`
+## Commits
 
-Optimización:
+1. `audit operations readiness`
+2. `extend production data model`
+3. `build production batch management`
+4. `add manufacturer export package`
+5. `add supplier UID import`
+6. `add physical verification workflow`
+7. `build inventory management`
+8. `add order management`
+9. `add manual payment and shipping`
+10. `add reservation and packing`
+11. `add activation card`
+12. `add operations dashboard`
+13. `improve institutions and support`
+14. `harden operations security`
+15. `add tests and documentation`
 
-- PNG/WebP para logo, icono y fotografía.
-- Favicon, Apple touch icon, social icon y OG image.
-- Documentación en `docs/BRAND_ASSETS.md` y `docs/BRAND_SYSTEM.md`.
+## Risks and pending decisions
 
-## Rutas modificadas
-
-- `/`
-- `/login`
-- `/register`
-- `/activate`
-- `/activate/[publicCode]`
-- `/p/[publicCode]`
-- `/support`
-- `/_not-found`
-- error boundary global
-- shell dashboard/admin
-
-## GitHub
-
-- Repositorio inspeccionado: `https://github.com/helpliscl-cmyk/helplis`
-- Visibilidad: Public
-- Remote local: `origin https://helpliscl-cmyk@github.com/helpliscl-cmyk/helplis.git`
-- Rama local de trabajo: `feature/supabase-integration`
-- Se hizo `git fetch origin`.
-- Push de `feature/supabase-integration`: OK.
-- Autenticación: se fijó el usuario `helpliscl-cmyk` en el remote para evitar selección ambigua entre cuentas guardadas.
-- Pull request sugerido: `https://github.com/helpliscl-cmyk/helplis/pull/new/feature/supabase-integration`
-- No se hizo force push.
-- Remoto `main` tiene historial independiente con 2 commits y 3 PNG en raíz.
-
-Commits creados en esta fase:
-
-- `docs: audit mvp and benchmark competitor`
-- `feat: add official helplis brand assets`
-- `feat: implement helplis brand experience`
-- `feat: prepare supabase and deployment setup`
-- `test: stabilize e2e against existing server`
-- `docs: record github push auth blocker`
-- `docs: record github push success`
-- `docs: clarify github credential account`
-
-## Supabase
-
-- Proyecto observado: `helpliscl-cmyk's Project`
-- Project ref visible: `ndzcpzjkseugqffyeslr`
-- Estado inicial: 0 tablas en `public`
-- Migración preparada: `supabase/migrations/20260711180000_helplis_mvp.sql`
-- Incluye tablas, índices, RLS, función de ficha pública, bucket `profile-photos` y políticas de Storage.
-- Migración ejecutada desde SQL Editor en Supabase: OK, `Success. No rows returned`.
-- Verificación posterior: 14 tablas creadas, políticas RLS visibles, funciones/enums visibles y bucket `profile-photos` creado con 4 políticas, 5 MB y MIME `image/jpeg`, `image/png`, `image/webp`.
-
-## Variables
-
-Actualizadas en `.env.example`:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_JWT_SECRET`
-- `SUPABASE_STORAGE_PROFILE_BUCKET`
-
-## Pruebas
-
-| Comando | Resultado |
-| --- | --- |
-| `npm run lint` | OK |
-| `npm run typecheck` | OK |
-| `npm run test` | OK, 4 archivos y 33 tests |
-| `npm run build` | OK |
-| `npm run test:e2e` | Bloqueado por servidor Next ya activo en 3108. |
-| `npx playwright test --config=playwright.existing.config.ts` | OK, 1 E2E contra `localhost:3108`. |
-
-## Vercel y Cloudflare
-
-- Vercel no se configuró por problema de verificación de cuenta.
-- No se tocaron DNS.
-- Documentos actualizados:
-  - `docs/VERCEL_DEPLOYMENT.md`
-  - `docs/CLOUDFLARE_SETUP.md`
-
-## Riesgos
-
-- Supabase ya tiene esquema MVP aplicado, pero todavía no está conectado al runtime de la app.
-- GitHub remoto `main` y local tienen historias independientes.
-- La rama remota está subida; falta crear/revisar PR y observar CI en GitHub.
-- El E2E estándar requiere detener el server 3108 o usar la config alternativa agregada.
-- La app sigue usando SQLite local como backend efectivo.
-
-## Recomendaciones antes de producción
-
-1. Resolver verificación de Vercel.
-2. Subir rama a GitHub y revisar CI.
-3. Aplicar migración Supabase en ambiente de prueba.
-4. Implementar adaptadores Supabase Auth/DB/Storage.
-5. Revisar términos, privacidad y consentimiento legal chileno.
-6. Definir precios/catálogo antes de publicar venta.
-7. Configurar correo transaccional real y notificaciones.
-
-## Actualización: pricing funnel retail
-
-Fecha: 2026-07-12.
-
-### Resumen
-
-Se incorporó el modelo comercial definitivo de compra única y se transformó el home/formulario en un funnel de compra sin checkout.
-
-### Precios implementados
-
-- 1 Pulsera HelPlis: $18.000 CLP.
-- Pack 2 HelPlis: $28.000 CLP, $14.000 c/u, ahorro $8.000.
-- Pack 3 HelPlis: $35.000 CLP, $11.667 c/u, ahorro $19.000.
-- Envío aparte.
-- Sin mensualidad obligatoria.
-
-### Cambios principales
-
-- Home con hero `Desde $18.000` y compra única, sin mencionar envío.
-- Header con `Comprar HelPlis` como CTA principal y `Activar` secundario.
-- Sección `Elige tu HelPlis` con tres packs.
-- Copy del home compactado para reducir largo en móvil.
-- `/quiero-helplis?pack=1|2|3` preselecciona cantidad y precio.
-- Formulario solicita nombre, WhatsApp, correo opcional, comuna, región, uso principal, observaciones y aceptación de contacto.
-- Confirmación muestra resumen y enlace de WhatsApp prellenado.
-- Admin suma vista `/admin/leads` con pack, cantidad, precio, envío pendiente, estado, fecha y origen.
-- Eventos agregados: `PRICING_VIEWED`, `PACK_SELECTED`, `PACK_1_SELECTED`, `PACK_2_SELECTED`, `PACK_3_SELECTED`, `ORDER_INTENT_STARTED`, `ORDER_INTENT_COMPLETED`, `WHATSAPP_ORDER_CLICKED`.
-
-### Commits de esta fase
-
-- `add final retail pricing model`
-- `redesign pricing section`
-- `update purchase intent flow`
-- `add pack calculations and analytics`
-- `improve FAQ and commercial copy`
-- `fix typography and visible text`
-
-### Pendientes
-
-- Definir costo, cobertura y plazos de envío.
-- Implementar checkout cuando exista medio de pago confirmado.
-- Definir condiciones institucionales por cantidad.
-- Conectar CRM/notificaciones reales.
-- Verificar CI y producción después del deploy.
+- Real production DB cutover to Supabase operational tables and policies.
+- External rate limiting.
+- Final payment provider.
+- Final shipping provider.
+- Real file uploads and evidence-photo storage.
+- Real 500-unit batch approval.
+- Supplier instructions must be manually reviewed before sending.
