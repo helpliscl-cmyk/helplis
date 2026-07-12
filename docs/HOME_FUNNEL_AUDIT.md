@@ -108,3 +108,64 @@ HelPlis debe adaptar la logica, no el diseno ni los textos. Como no existe preci
 - Antes movil: `docs/audit/screenshots/home-before-mobile.png`
 
 Las capturas despues se agregaran al terminar el rediseno.
+
+## Resultado despues del rediseño
+
+### Nueva estructura del home
+
+1. Hero comercial con problema, producto, beneficios rapidos y CTA.
+2. Problema con escenarios cotidianos.
+3. Solucion con QR, NFC, perfil digital y contacto.
+4. Como funciona en tres pasos.
+5. Para quien sirve, priorizando ninos, adultos mayores y personas.
+6. Producto/pulsera con fotografia oficial y estado "muy pronto".
+7. Por que HelPlis.
+8. Privacidad como confianza.
+9. Instituciones y alianzas.
+10. Senales legitimas de confianza inicial.
+11. Preguntas frecuentes comerciales.
+12. Cierre de venta con CTA y acceso discreto a activacion.
+
+### Recorridos validados
+
+#### A. Madre o padre que llega desde Instagram
+
+- Ve: "Si se pierde, ayudale a volver", foto de la pulsera y CTA "Quiero mi HelPlis".
+- Entiende: no necesita app ni bateria, y puede dejar interes sin crear cuenta.
+- Accion: abre `/quiero-helplis` desde hero o cierre.
+- Obstaculo pendiente: falta precio final y disponibilidad comercial.
+
+#### B. Persona que busca pulsera para adulto mayor
+
+- Ve: escenario de adulto mayor, uso prioritario y FAQ de GPS/bateria.
+- Entiende: no hay rastreo permanente; la ficha muestra datos autorizados.
+- Accion: deja interes seleccionando "Adultos mayores".
+- Obstaculo pendiente: explicar futuras opciones de talla/material cuando esten confirmadas.
+
+#### C. Colegio que evalua una alianza
+
+- Ve: seccion Instituciones, tipos de comunidad y CTA "Solicitar alianza institucional".
+- Entiende: puede existir codigo/landing institucional y acompanamiento de activacion.
+- Accion: llega a `/quiero-helplis?tipo=institucion`.
+- Obstaculo pendiente: definir condiciones reales de descuento y proceso de compra por volumen.
+
+#### D. Cliente que ya recibio su pulsera
+
+- Ve: "Activar" en header y acceso discreto en cierre.
+- Entiende: activar no desaparecio, pero ya no domina el home.
+- Accion: entra a `/activate` o `/activate/[publicCode]`.
+- Obstaculo pendiente: crear acceso secundario para abrir ficha por codigo fuera del hero si soporte lo requiere.
+
+## Capturas despues
+
+- Despues escritorio: `docs/audit/screenshots/home-after-desktop.png`
+- Despues tablet: `docs/audit/screenshots/home-after-tablet.png`
+- Despues movil grande: `docs/audit/screenshots/home-after-mobile-large.png`
+- Despues movil pequeno: `docs/audit/screenshots/home-after-mobile-small.png`
+
+## Validacion responsive
+
+- Movil pequeno: header compacto, CTA visible, sin overflow horizontal observado.
+- Movil grande: secciones apiladas y cards legibles.
+- Tablet: grillas cambian sin solapes.
+- Escritorio: hero, producto, instituciones y FAQ mantienen jerarquia visual.

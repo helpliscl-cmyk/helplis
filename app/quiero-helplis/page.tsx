@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft, CheckCircle2, ShoppingBag } from "lucide-react";
+import { FunnelTracker } from "@/components/analytics/funnel-tracker";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,6 +33,7 @@ export default async function PurchaseIntentPage({
 
   return (
     <main className="brand-gradient min-h-screen px-4 py-8">
+      <FunnelTracker pageEvent={params.sent ? "PURCHASE_INTENT_COMPLETED" : "PURCHASE_INTENT_STARTED"} />
       <div className="mx-auto grid max-w-6xl gap-6">
         <div className="flex items-center justify-between gap-4">
           <BrandLogo className="h-10" />

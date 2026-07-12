@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowRight,
   Baby,
@@ -11,8 +12,6 @@ import {
   Dog,
   HeartPulse,
   KeyRound,
-  LocateFixed,
-  LockKeyhole,
   MapPin,
   Menu,
   Package,
@@ -26,6 +25,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
+import { FunnelTracker } from "@/components/analytics/funnel-tracker";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { OFFICIAL_CONTACT, OFFICIAL_DOMAIN } from "@/lib/constants";
@@ -139,12 +139,12 @@ function Header() {
           <a href="#faq" className="hover:text-[var(--brand-primary-dark)]">Preguntas frecuentes</a>
         </nav>
         <div className="hidden items-center gap-2 md:flex">
-          <ButtonLink href="/login" variant="ghost">Iniciar sesion</ButtonLink>
-          <ButtonLink href="/activate" variant="secondary">
+          <ButtonLink href="/login" variant="ghost" data-funnel-event="LOGIN_CLICKED">Iniciar sesion</ButtonLink>
+          <ButtonLink href="/activate" variant="secondary" data-funnel-event="ACTIVATION_CLICKED">
             <KeyRound aria-hidden className="h-4 w-4" />
             Activar
           </ButtonLink>
-          <ButtonLink href="/quiero-helplis" variant="accent">
+          <ButtonLink href="/quiero-helplis" variant="accent" data-funnel-event="HERO_CTA_CLICKED">
             <ShoppingBag aria-hidden className="h-4 w-4" />
             Quiero mi HelPlis
           </ButtonLink>
@@ -161,15 +161,15 @@ function Header() {
             <a href="#instituciones" className="rounded-md px-3 py-2 hover:bg-[#edf8fb]">Instituciones</a>
             <a href="#faq" className="rounded-md px-3 py-2 hover:bg-[#edf8fb]">Preguntas frecuentes</a>
             <div className="mt-2 grid gap-2 border-t border-[var(--brand-border)] pt-3">
-              <ButtonLink href="/quiero-helplis" variant="accent">
+              <ButtonLink href="/quiero-helplis" variant="accent" data-funnel-event="HERO_CTA_CLICKED">
                 <ShoppingBag aria-hidden className="h-4 w-4" />
                 Quiero mi HelPlis
               </ButtonLink>
-              <ButtonLink href="/activate" variant="secondary">
+              <ButtonLink href="/activate" variant="secondary" data-funnel-event="ACTIVATION_CLICKED">
                 <KeyRound aria-hidden className="h-4 w-4" />
                 Activar
               </ButtonLink>
-              <ButtonLink href="/login" variant="ghost">Iniciar sesion</ButtonLink>
+              <ButtonLink href="/login" variant="ghost" data-funnel-event="LOGIN_CLICKED">Iniciar sesion</ButtonLink>
             </div>
           </div>
         </details>
@@ -181,6 +181,7 @@ function Header() {
 export default function Home() {
   return (
     <main className="min-h-screen bg-[var(--brand-background)] text-[var(--brand-text)]">
+      <FunnelTracker pageEvent="HOME_VIEWED" />
       <Header />
 
       <section className="relative isolate overflow-hidden border-b border-[var(--brand-border)] bg-white">
@@ -209,7 +210,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/quiero-helplis" variant="accent">
+              <ButtonLink href="/quiero-helplis" variant="accent" data-funnel-event="HERO_CTA_CLICKED">
                 <ShoppingBag aria-hidden className="h-4 w-4" />
                 Quiero mi HelPlis
               </ButtonLink>
@@ -272,7 +273,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="como-funciona" className="border-b border-[var(--brand-border)] bg-white">
+      <section id="como-funciona" data-funnel-view="HOW_IT_WORKS_VIEWED" className="border-b border-[var(--brand-border)] bg-white">
         <div className="mx-auto max-w-7xl px-4 py-16">
           <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr] lg:items-start">
             <div className="space-y-3">
@@ -295,7 +296,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-8">
-            <ButtonLink href="/quiero-helplis" variant="accent">
+            <ButtonLink href="/quiero-helplis" variant="accent" data-funnel-event="HERO_CTA_CLICKED">
               <ShoppingBag aria-hidden className="h-4 w-4" />
               Quiero mi HelPlis
             </ButtonLink>
@@ -327,7 +328,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="pulsera" className="border-b border-[var(--brand-border)] bg-[#071b3a] text-white">
+      <section id="pulsera" data-funnel-view="PRODUCT_VIEWED" className="border-b border-[var(--brand-border)] bg-[#071b3a] text-white">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 lg:grid-cols-[1fr_1fr] lg:items-center">
           <div className="relative min-h-[360px] overflow-hidden rounded-lg bg-white/8">
             <Image
@@ -355,7 +356,7 @@ export default function Home() {
             <div className="rounded-lg border border-white/16 bg-white/8 p-4 text-sm leading-6 text-blue-50">
               Precio final y disponibilidad: muy pronto. Deja tu interes y te avisaremos cuando abramos preventa o compra.
             </div>
-            <ButtonLink href="/quiero-helplis" variant="accent">
+            <ButtonLink href="/quiero-helplis" variant="accent" data-funnel-event="HERO_CTA_CLICKED">
               <ShoppingBag aria-hidden className="h-4 w-4" />
               Quiero recibir novedades
             </ButtonLink>
@@ -431,7 +432,7 @@ export default function Home() {
                 </p>
               ))}
             </div>
-            <ButtonLink href="/quiero-helplis?tipo=institucion" variant="accent">
+            <ButtonLink href="/quiero-helplis?tipo=institucion" variant="accent" data-funnel-event="INSTITUTION_CTA_CLICKED">
               <School aria-hidden className="h-4 w-4" />
               Solicitar alianza institucional
             </ButtonLink>
@@ -490,15 +491,23 @@ export default function Home() {
               Deja tu interes para recibir novedades de disponibilidad, preventa y opciones para instituciones.
             </p>
             <p className="mt-3 text-sm text-[var(--brand-muted)]">
-              ¿Ya tienes una? <a href="/activate" className="font-medium text-[var(--brand-primary-dark)] underline">Activar pulsera</a>.
+              ¿Ya tienes una?{" "}
+              <Link
+                href="/activate"
+                data-funnel-event="ACTIVATION_CLICKED"
+                className="font-medium text-[var(--brand-primary-dark)] underline"
+              >
+                Activar pulsera
+              </Link>
+              .
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <ButtonLink href="/quiero-helplis" variant="accent">
+            <ButtonLink href="/quiero-helplis" variant="accent" data-funnel-event="HERO_CTA_CLICKED">
               <ShoppingBag aria-hidden className="h-4 w-4" />
               Quiero mi HelPlis
             </ButtonLink>
-            <ButtonLink href="/quiero-helplis?tipo=institucion" variant="secondary">
+            <ButtonLink href="/quiero-helplis?tipo=institucion" variant="secondary" data-funnel-event="INSTITUTION_CTA_CLICKED">
               <Building2 aria-hidden className="h-4 w-4" />
               Solicitar alianza
             </ButtonLink>
@@ -517,7 +526,13 @@ export default function Home() {
           <div className="grid gap-2 text-sm text-blue-50">
             <p>{OFFICIAL_CONTACT.name}</p>
             <p>{OFFICIAL_CONTACT.email}</p>
-            <p>{OFFICIAL_CONTACT.phoneDisplay}</p>
+            <a
+              href={`https://wa.me/${OFFICIAL_CONTACT.phoneE164.replace("+", "")}`}
+              data-funnel-event="WHATSAPP_CLICKED"
+              className="underline"
+            >
+              {OFFICIAL_CONTACT.phoneDisplay}
+            </a>
             <p>{OFFICIAL_DOMAIN.replace("https://", "")}</p>
           </div>
         </div>

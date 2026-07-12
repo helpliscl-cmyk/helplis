@@ -1,6 +1,20 @@
 import { expect, test } from "@playwright/test";
 
 test("flujo principal HelPlis MVP", async ({ page, context }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Si se pierde, ayudale a volver." })).toBeVisible();
+  await page.getByRole("link", { name: "Quiero mi HelPlis" }).first().click();
+  await expect(page.getByRole("heading", { name: "Quiero mi HelPlis" })).toBeVisible();
+  await page.getByLabel("Nombre").fill("Lead E2E");
+  await page.getByLabel("Telefono o WhatsApp").fill("+56912340000");
+  await page.getByLabel("Correo opcional").fill(`lead-${Date.now()}@example.test`);
+  await page.getByLabel("Comuna").fill("Santiago");
+  await page.getByLabel("Cantidad estimada").fill("2");
+  await page.getByLabel("Uso principal").selectOption("Adultos mayores");
+  await page.getByLabel("Acepto que HelPlis me contacte").check();
+  await page.getByRole("button", { name: "Registrar interes" }).click();
+  await expect(page.getByText("Interes registrado")).toBeVisible();
+
   await page.goto("/login");
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page.getByRole("heading", { name: "Panel administrador" })).toBeVisible();
@@ -54,5 +68,6 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page.getByRole("heading", { name: "Panel administrador" })).toBeVisible();
   await page.goto("/admin/notifications");
+  await expect(page.getByRole("heading", { name: "PURCHASE_INTENT_CREATED" }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "LOCATION_SHARED" }).first()).toBeVisible();
 });

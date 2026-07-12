@@ -604,3 +604,15 @@ model PurchaseIntent {
   @@index([primaryUse])
   @@index([createdAt])
 }
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  eventName String
+  path      String?
+  target    String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  @@index([eventName])
+  @@index([createdAt])
+}
