@@ -189,7 +189,7 @@ La revisión publicada previa seguía comunicando interés/preventa: no mostraba
 
 ### Ajustes de funnel
 
-1. Hero con precio de entrada: desde $18.000, compra única y envío aparte.
+1. Hero con precio de entrada: desde $18.000 y compra única, sin mencionar envío.
 2. Header con compra como CTA principal y `Activar` secundario.
 3. Sección `Elige tu HelPlis` con tres packs comparables.
 4. Se reemplazó confianza inicial por `Tecnología simple, ayuda real`.
@@ -197,6 +197,11 @@ La revisión publicada previa seguía comunicando interés/preventa: no mostraba
 6. `/quiero-helplis` ahora recibe `?pack=1`, `?pack=2` o `?pack=3`, calcula el precio y guarda la intención.
 7. Confirmación ofrece WhatsApp prellenado sin enviar automáticamente.
 8. Admin suma vista de leads comerciales con pack, cantidad, precio, envío pendiente, estado y origen.
+
+### Ajuste posterior de ritmo
+
+- El home ya no menciona envío; esa información queda para el resumen final del formulario de compra.
+- Se compactó la secuencia del home para reducir lectura en móvil: se agruparon problema, usos y solución; se eliminaron bloques repetidos y se redujo el FAQ visible.
 
 ### Riesgos pendientes
 

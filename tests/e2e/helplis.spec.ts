@@ -4,7 +4,8 @@ async function submitLead(page: Page, pack: "1" | "2" | "3", name: string, expec
   await page.goto(`/quiero-helplis?pack=${pack}&source=e2e_pack_${pack}`);
   await expect(page.getByRole("heading", { name: "Comprar HelPlis" })).toBeVisible();
   await expect(page.getByText(expectedPrice).first()).toBeVisible();
-  await expect(page.getByText("El envío se cotiza o informa por separado.")).toBeVisible();
+  await expect(page.getByText("Resumen final")).toBeVisible();
+  await expect(page.getByText("Envío: se informa por separado")).toBeVisible();
 
   await page.getByLabel("Nombre").fill(name);
   await page.getByRole("textbox", { name: "WhatsApp" }).fill("+56912340000");

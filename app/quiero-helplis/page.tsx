@@ -141,7 +141,7 @@ export default async function PurchaseIntentPage({
                 </p>
                 <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">Comprar HelPlis</h1>
                 <p className="max-w-xl text-base leading-7 text-[var(--brand-muted)]">
-                  Elige tu pack, deja tus datos y te contactaremos para coordinar la compra. El envío se paga aparte.
+                  Elige tu pack, deja tus datos y te contactaremos para coordinar la compra.
                 </p>
               </div>
 

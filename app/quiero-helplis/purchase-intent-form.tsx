@@ -36,7 +36,7 @@ export function PurchaseIntentForm({
     <Card className="p-5">
       <h2 className="text-xl font-semibold">Datos del comprador</h2>
       <p className="mt-2 text-sm leading-6 text-[var(--brand-muted)]">
-        Solicitamos lo mínimo para responderte, confirmar el pack y coordinar el envío aparte.
+        Solicitamos lo mínimo para responderte y confirmar el pack elegido.
       </p>
 
       {error ? (
@@ -92,36 +92,6 @@ export function PurchaseIntentForm({
           </div>
         </fieldset>
 
-        <div className="rounded-lg border border-[var(--brand-border)] bg-[#f8fbfe] p-4">
-          <h3 className="font-semibold">Resumen</h3>
-          <div className="mt-3 grid gap-2 text-sm text-[var(--brand-muted)] sm:grid-cols-2">
-            <p>
-              <span className="font-medium text-[var(--brand-text)]">Pack:</span> {selectedPack.name}
-            </p>
-            <p>
-              <span className="font-medium text-[var(--brand-text)]">Cantidad:</span> {selectedPack.quantity}
-            </p>
-            <p>
-              <span className="font-medium text-[var(--brand-text)]">Total:</span> {formatCLP(selectedPack.totalPrice)}
-            </p>
-            <p>
-              <span className="font-medium text-[var(--brand-text)]">Unidad:</span> {formatCLP(unitPrice)} c/u
-            </p>
-            <p>
-              <span className="font-medium text-[var(--brand-text)]">Compra:</span> única
-            </p>
-            <p>
-              <span className="font-medium text-[var(--brand-text)]">Envío:</span> aparte
-            </p>
-          </div>
-          {savings > 0 ? (
-            <p className="mt-3 text-sm font-medium text-[var(--brand-primary-dark)]">
-              Ahorro frente a comprar por separado: {formatCLP(savings)}.
-            </p>
-          ) : null}
-          <p className="mt-3 text-sm text-[var(--brand-muted)]">El envío se cotiza o informa por separado.</p>
-        </div>
-
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Nombre">
             <Input name="name" autoComplete="name" required />
@@ -155,6 +125,34 @@ export function PurchaseIntentForm({
         <Field label="Observaciones opcionales">
           <Textarea name="message" placeholder="Ej: busco una pulsera para mi hijo, para mi papá o para una institución." />
         </Field>
+        <div className="rounded-lg border border-[var(--brand-border)] bg-[#f8fbfe] p-4">
+          <h3 className="font-semibold">Resumen final</h3>
+          <div className="mt-3 grid gap-2 text-sm text-[var(--brand-muted)] sm:grid-cols-2">
+            <p>
+              <span className="font-medium text-[var(--brand-text)]">Pack:</span> {selectedPack.name}
+            </p>
+            <p>
+              <span className="font-medium text-[var(--brand-text)]">Cantidad:</span> {selectedPack.quantity}
+            </p>
+            <p>
+              <span className="font-medium text-[var(--brand-text)]">Total:</span> {formatCLP(selectedPack.totalPrice)}
+            </p>
+            <p>
+              <span className="font-medium text-[var(--brand-text)]">Unidad:</span> {formatCLP(unitPrice)} c/u
+            </p>
+            <p>
+              <span className="font-medium text-[var(--brand-text)]">Compra:</span> única
+            </p>
+            <p>
+              <span className="font-medium text-[var(--brand-text)]">Envío:</span> se informa por separado
+            </p>
+          </div>
+          {savings > 0 ? (
+            <p className="mt-3 text-sm font-medium text-[var(--brand-primary-dark)]">
+              Ahorro frente a comprar por separado: {formatCLP(savings)}.
+            </p>
+          ) : null}
+        </div>
         <CheckboxField
           name="contactAccepted"
           label="Acepto que HelPlis me contacte por WhatsApp, teléfono o correo para responder mi solicitud."

@@ -28,12 +28,8 @@ export const HOME_FAQS = [
     answer: "No. HelPlis se compra una sola vez y no tiene mensualidad obligatoria.",
   },
   {
-    question: "¿El envío está incluido?",
-    answer: "No. El envío se paga aparte y su costo depende del destino.",
-  },
-  {
     question: "¿Cuánto cuesta?",
-    answer: "1 pulsera: $18.000. Pack 2: $28.000. Pack 3: $35.000. El envío se paga aparte.",
+    answer: "1 pulsera: $18.000. Pack 2: $28.000. Pack 3: $35.000.",
   },
   {
     question: "¿Puedo cambiar la información después?",
@@ -69,5 +65,5 @@ export const HOME_FAQS = [
 export const HOME_SEO = {
   title: "HelPlis | Pulsera inteligente QR + NFC desde $18.000",
   description:
-    "Pulsera inteligente con QR y NFC para personas, niños, adultos mayores, mascotas y objetos. Compra única, sin batería y sin mensualidad. Envío se paga aparte.",
+    "Pulsera inteligente con QR y NFC para personas, niños, adultos mayores, mascotas y objetos. Compra única, sin batería y sin mensualidad.",
 } as const;

@@ -141,9 +141,10 @@ Se incorporó el modelo comercial definitivo de compra única y se transformó e
 
 ### Cambios principales
 
-- Home con hero `Desde $18.000`, compra única y envío aparte.
+- Home con hero `Desde $18.000` y compra única, sin mencionar envío.
 - Header con `Comprar HelPlis` como CTA principal y `Activar` secundario.
 - Sección `Elige tu HelPlis` con tres packs.
+- Copy del home compactado para reducir largo en móvil.
 - `/quiero-helplis?pack=1|2|3` preselecciona cantidad y precio.
 - Formulario solicita nombre, WhatsApp, correo opcional, comuna, región, uso principal, observaciones y aceptación de contacto.
 - Confirmación muestra resumen y enlace de WhatsApp prellenado.
