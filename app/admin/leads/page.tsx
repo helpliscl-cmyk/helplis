@@ -1,5 +1,7 @@
 import { Badge, statusTone } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { convertLeadToOrderAction } from "@/features/orders/actions";
 import { formatDate } from "@/lib/formatting/format";
 import { PURCHASE_INTENT_STATUSES } from "@/lib/marketing/content";
 import { formatCLP, getHelplisPack } from "@/lib/marketing/pricing";
@@ -7,6 +9,7 @@ import { prisma } from "@/server/db/client";
 
 export default async function AdminLeadsPage() {
   const leads = await prisma.purchaseIntent.findMany({
+    include: { order: true },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -49,6 +52,7 @@ export default async function AdminLeadsPage() {
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3">Origen</th>
                 <th className="px-4 py-3">Fecha</th>
+                <th className="px-4 py-3">Pedido</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
@@ -71,6 +75,20 @@ export default async function AdminLeadsPage() {
                     </td>
                     <td className="px-4 py-3">{lead.origin ?? lead.source ?? "Sin origen"}</td>
                     <td className="px-4 py-3">{formatDate(lead.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      {lead.order ? (
+                        <a className="text-[var(--brand-primary-dark)] underline-offset-4 hover:underline" href={`/admin/orders/${lead.order.id}`}>
+                          {lead.order.orderNumber}
+                        </a>
+                      ) : (
+                        <form action={convertLeadToOrderAction}>
+                          <input type="hidden" name="leadId" value={lead.id} />
+                          <Button type="submit" variant="secondary" className="min-h-9 px-3 py-1">
+                            Convertir
+                          </Button>
+                        </form>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
