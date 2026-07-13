@@ -11,6 +11,7 @@ enum UserRole {
   USER
   ORGANIZATION_ADMIN
   SUPPORT
+  OPERATIONS
   ADMIN
   SUPER_ADMIN
 }
@@ -373,6 +374,7 @@ enum ContactActionType {
   WHATSAPP_CLICKED
   MESSAGE_CLICKED
   LOCATION_SHARED
+  LOCATION_REJECTED
   FOUND_REPORTED
   EMERGENCY_REPORTED
   PROFILE_VIEWED
@@ -468,6 +470,8 @@ model Device {
   activations             Activation[]
   notificationEvents      NotificationEvent[]
   contactActions          ContactAction[]
+  locationShares          LocationShare[]
+  foundReports            FoundReport[]
   physicalVerifications   PhysicalVerification[]
   orderItems              OrderItem[]
   supportTickets          SupportTicket[]
@@ -485,46 +489,98 @@ model Device {
 }
 
 model Profile {
-  id                  String              @id @default(cuid())
-  ownerId             String?
-  type                ProfileType         @default(PERSON)
-  displayName         String
-  legalName           String?
-  alias               String?
-  photoUrl            String?
-  description         String?
-  medicalNotes        String?
-  allergies           String?
-  medications         String?
-  bloodType           String?
-  specialInstructions String?
-  preferredLanguage   String              @default("es")
-  birthYear           Int?
-  species             String?
-  breed               String?
-  color               String?
-  objectDescription   String?
-  rewardMessage       String?
-  lostMessage         String?
-  showPhoto           Boolean             @default(false)
-  showMedicalInfo     Boolean             @default(false)
-  showContactNames    Boolean             @default(true)
-  showPhoneNumbers    Boolean             @default(true)
-  showAge             Boolean             @default(false)
-  showLocationButton  Boolean             @default(true)
-  showWhatsAppButton  Boolean             @default(true)
-  showCallButton      Boolean             @default(true)
-  showMessageButton   Boolean             @default(true)
-  isPublic            Boolean             @default(true)
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  deletedAt           DateTime?
-  owner               User?               @relation(fields: [ownerId], references: [id])
-  devices             Device[]
-  contacts            EmergencyContact[]
-  scanEvents          ScanEvent[]
-  notificationEvents  NotificationEvent[]
-  contactActions      ContactAction[]
+  id                      String              @id @default(cuid())
+  ownerId                 String?
+  type                    ProfileType         @default(PERSON)
+  displayName             String
+  legalName               String?
+  alias                   String?
+  photoUrl                String?
+  headline                String?
+  helpMessage             String?
+  description             String?
+  statusMessage           String?
+  firstName               String?
+  lastName                String?
+  approximateAge          Int?
+  genderOptional          String?
+  communicationNotes      String?
+  mobilityNotes           String?
+  sensoryNotes            String?
+  cognitiveNotes          String?
+  medicalNotes            String?
+  allergies               String?
+  medicalConditions       String?
+  medications             String?
+  bloodType               String?
+  medicalInstructions     String?
+  emergencyInstructions   String?
+  organDonorOptional      Boolean?
+  healthProviderOptional  String?
+  specialInstructions     String?
+  preferredLanguage       String              @default("es")
+  birthYear               Int?
+  country                 String?
+  region                  String?
+  commune                 String?
+  generalArea             String?
+  exactAddress            String?
+  species                 String?
+  petName                 String?
+  breed                   String?
+  color                   String?
+  sex                     String?
+  sterilizedOptional      Boolean?
+  veterinaryNotes         String?
+  microchipNumberOptional String?
+  petBehaviorNotes        String?
+  objectName              String?
+  objectCategory          String?
+  brand                   String?
+  model                   String?
+  objectDescription       String?
+  rewardMessage           String?
+  returnInstructions      String?
+  lostMessage             String?
+  showPhoto               Boolean             @default(true)
+  showFullName            Boolean             @default(false)
+  showAlias               Boolean             @default(true)
+  showMedicalInfo         Boolean             @default(false)
+  showContactNames        Boolean             @default(true)
+  showPhoneNumbers        Boolean             @default(false)
+  showAge                 Boolean             @default(false)
+  showApproximateAge      Boolean             @default(false)
+  showBloodType           Boolean             @default(false)
+  showAllergies           Boolean             @default(false)
+  showMedicalConditions   Boolean             @default(false)
+  showMedications         Boolean             @default(false)
+  showMedicalInstructions Boolean             @default(false)
+  showCommunicationNotes  Boolean             @default(false)
+  showMobilityNotes       Boolean             @default(false)
+  showSensoryNotes        Boolean             @default(false)
+  showGeneralArea         Boolean             @default(false)
+  showExactAddress        Boolean             @default(false)
+  showLocationButton      Boolean             @default(true)
+  showWhatsAppButton      Boolean             @default(true)
+  showCallButton          Boolean             @default(true)
+  showMessageButton       Boolean             @default(true)
+  allowCall               Boolean             @default(true)
+  allowWhatsApp           Boolean             @default(true)
+  allowMessage            Boolean             @default(true)
+  allowLocationSharing    Boolean             @default(true)
+  allowFoundReport        Boolean             @default(true)
+  isPublic                Boolean             @default(true)
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  deletedAt               DateTime?
+  owner                   User?               @relation(fields: [ownerId], references: [id])
+  devices                 Device[]
+  contacts                EmergencyContact[]
+  scanEvents              ScanEvent[]
+  notificationEvents      NotificationEvent[]
+  contactActions          ContactAction[]
+  locationShares          LocationShare[]
+  foundReports            FoundReport[]
 
   @@index([ownerId])
   @@index([type])
@@ -532,20 +588,21 @@ model Profile {
 }
 
 model EmergencyContact {
-  id              String   @id @default(cuid())
-  profileId       String
-  name            String
-  relationship    String?
-  phone           String
-  email           String?
-  whatsappEnabled Boolean  @default(true)
-  callEnabled     Boolean  @default(true)
-  messageEnabled  Boolean  @default(true)
-  priority        Int      @default(1)
-  isVisible       Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  profileId         String
+  name              String
+  relationship      String?
+  phone             String
+  email             String?
+  availabilityNotes String?
+  whatsappEnabled   Boolean  @default(true)
+  callEnabled       Boolean  @default(true)
+  messageEnabled    Boolean  @default(true)
+  priority          Int      @default(1)
+  isVisible         Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  profile           Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
   @@index([priority])
@@ -578,11 +635,65 @@ model ScanEvent {
   profile            Profile?            @relation(fields: [profileId], references: [id])
   notificationEvents NotificationEvent[]
   contactActions     ContactAction[]
+  locationShares     LocationShare[]
+  foundReports       FoundReport[]
 
   @@index([deviceId])
   @@index([profileId])
   @@index([scannedAt])
   @@index([scanMethod])
+}
+
+model LocationShare {
+  id               String     @id @default(cuid())
+  deviceId         String
+  profileId        String?
+  scanEventId      String?
+  latitude         Float?
+  longitude        Float?
+  accuracy         Float?
+  consented        Boolean    @default(false)
+  permissionStatus String     @default("GRANTED")
+  result           String     @default("RECORDED")
+  ipHash           String?
+  userAgent        String?
+  createdAt        DateTime   @default(now())
+  device           Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  profile          Profile?   @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  scanEvent        ScanEvent? @relation(fields: [scanEventId], references: [id], onDelete: SetNull)
+
+  @@index([deviceId])
+  @@index([profileId])
+  @@index([scanEventId])
+  @@index([createdAt])
+  @@index([permissionStatus])
+}
+
+model FoundReport {
+  id                String     @id @default(cuid())
+  deviceId          String
+  profileId         String?
+  scanEventId       String?
+  reporterName      String?
+  reporterPhone     String?
+  message           String?
+  latitude          Float?
+  longitude         Float?
+  accuracy          Float?
+  consentedLocation Boolean    @default(false)
+  status            String     @default("RECEIVED")
+  ipHash            String?
+  userAgent         String?
+  createdAt         DateTime   @default(now())
+  device            Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  profile           Profile?   @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  scanEvent         ScanEvent? @relation(fields: [scanEventId], references: [id], onDelete: SetNull)
+
+  @@index([deviceId])
+  @@index([profileId])
+  @@index([scanEventId])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model Activation {
