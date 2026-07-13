@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 type Contact = {
   name: string | null;
   phone: string | null;
+  phoneForAction: string | null;
   whatsappEnabled: boolean;
   callEnabled: boolean;
 };
@@ -31,8 +32,8 @@ export function PublicActions({
   showLocationButton: boolean;
 }) {
   const [status, setStatus] = useState<string | null>(null);
-  const firstCallable = contacts.find((contact) => contact.phone && contact.callEnabled);
-  const firstWhatsapp = contacts.find((contact) => contact.phone && contact.whatsappEnabled);
+  const firstCallable = contacts.find((contact) => contact.phoneForAction && contact.callEnabled);
+  const firstWhatsapp = contacts.find((contact) => contact.phoneForAction && contact.whatsappEnabled);
 
   async function shareLocation() {
     if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -82,9 +83,9 @@ export function PublicActions({
 
   return (
     <div className="grid gap-3">
-      {firstCallable?.phone ? (
+      {firstCallable?.phoneForAction ? (
         <a
-          href={`tel:${firstCallable.phone}`}
+          href={`tel:${firstCallable.phoneForAction}`}
           onClick={() => void record(scanId, "CALL_CLICKED")}
           className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[var(--brand-primary-dark)] bg-[var(--brand-primary-dark)] px-4 py-2 text-sm font-medium text-white"
         >
@@ -92,9 +93,9 @@ export function PublicActions({
           Llamar
         </a>
       ) : null}
-      {firstWhatsapp?.phone ? (
+      {firstWhatsapp?.phoneForAction ? (
         <a
-          href={`https://wa.me/${firstWhatsapp.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+          href={`https://wa.me/${firstWhatsapp.phoneForAction.replace(/\D/g, "")}?text=${encodeURIComponent(
             `Hola, escaneé el código ${publicCode} en HelPlis.`,
           )}`}
           onClick={() => void record(scanId, "WHATSAPP_CLICKED")}

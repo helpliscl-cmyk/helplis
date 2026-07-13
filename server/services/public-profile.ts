@@ -1,5 +1,6 @@
 import type { ContactActionType, ScanMethod } from "@prisma/client";
 import { hashIpAddress } from "@/lib/security/hashing";
+import { buildPublicProfileView, type PublicContactView, type PublicProfileView } from "@/server/profiles/public-view";
 import { prisma } from "@/server/db/client";
 import { notificationProvider } from "@/server/notifications/provider";
 
@@ -14,39 +15,8 @@ export type PublicProfileResult =
       scanId: string;
       deviceStatus: string;
       productType: string;
-      profile: {
-        type: string;
-        displayName: string;
-        alias: string | null;
-        photoUrl: string | null;
-        description: string | null;
-        medicalNotes: string | null;
-        allergies: string | null;
-        medications: string | null;
-        bloodType: string | null;
-        specialInstructions: string | null;
-        age: number | null;
-        species: string | null;
-        breed: string | null;
-        color: string | null;
-        objectDescription: string | null;
-        rewardMessage: string | null;
-        lostMessage: string | null;
-        showLocationButton: boolean;
-        showWhatsAppButton: boolean;
-        showCallButton: boolean;
-        showMessageButton: boolean;
-      };
-      contacts: Array<{
-        id: string;
-        name: string | null;
-        relationship: string | null;
-        phone: string | null;
-        email: string | null;
-        whatsappEnabled: boolean;
-        callEnabled: boolean;
-        messageEnabled: boolean;
-      }>;
+      profile: PublicProfileView;
+      contacts: PublicContactView[];
     };
 
 export async function resolvePublicProfile({
@@ -145,7 +115,7 @@ export async function resolvePublicProfile({
   });
 
   const profile = device.profile;
-  const currentYear = new Date().getFullYear();
+  const publicProfile = buildPublicProfileView(profile);
   const resultStatus = device.status === "LOST" ? "LOST" : device.status === "FOUND" ? "FOUND" : "ACTIVE";
 
   return {
@@ -155,39 +125,8 @@ export async function resolvePublicProfile({
     scanId: scan.id,
     deviceStatus: device.status,
     productType: device.productType,
-    profile: {
-      type: profile.type,
-      displayName: profile.alias || profile.displayName,
-      alias: profile.alias,
-      photoUrl: profile.showPhoto ? profile.photoUrl : null,
-      description: profile.description,
-      medicalNotes: profile.showMedicalInfo ? profile.medicalNotes : null,
-      allergies: profile.showMedicalInfo ? profile.allergies : null,
-      medications: profile.showMedicalInfo ? profile.medications : null,
-      bloodType: profile.showMedicalInfo ? profile.bloodType : null,
-      specialInstructions: profile.specialInstructions,
-      age: profile.showAge && profile.birthYear ? currentYear - profile.birthYear : null,
-      species: profile.species,
-      breed: profile.breed,
-      color: profile.color,
-      objectDescription: profile.objectDescription,
-      rewardMessage: profile.rewardMessage,
-      lostMessage: profile.lostMessage,
-      showLocationButton: profile.showLocationButton,
-      showWhatsAppButton: profile.showWhatsAppButton,
-      showCallButton: profile.showCallButton,
-      showMessageButton: profile.showMessageButton,
-    },
-    contacts: profile.contacts.map((contact) => ({
-      id: contact.id,
-      name: profile.showContactNames ? contact.name : null,
-      relationship: profile.showContactNames ? contact.relationship : null,
-      phone: profile.showPhoneNumbers ? contact.phone : null,
-      email: contact.email,
-      whatsappEnabled: contact.whatsappEnabled,
-      callEnabled: contact.callEnabled,
-      messageEnabled: contact.messageEnabled,
-    })),
+    profile: publicProfile,
+    contacts: publicProfile.contacts,
   };
 }
 
