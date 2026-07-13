@@ -52,6 +52,15 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByText("Esta HelPlis ya está activada.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver perfil de ayuda" })).toHaveAttribute("href", "/p/HLP001");
   await expect(page.getByRole("link", { name: "Administrar HelPlis" })).toHaveAttribute("href", "/dashboard/devices/HLP001");
+  const activeValidation = await page.request.post("/api/activation/validate", { data: { publicCode: "HLP001" } });
+  expect(activeValidation.status()).toBe(409);
+  const activePayload = await activeValidation.json();
+  expect(activePayload).toMatchObject({
+    state: "ACTIVE",
+    publicProfileUrl: "/p/HLP001",
+    managementUrl: "/dashboard/devices/HLP001",
+  });
+  expect(JSON.stringify(activePayload)).not.toMatch(/ownerId|email|phone|productType|ACTIVATED/);
 
   await page.goto("/p/HLP013");
   await expect(page.getByRole("heading", { name: "Esta HelPlis no se encuentra disponible temporalmente." })).toBeVisible();
@@ -61,6 +70,12 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.goto("/p/HLP014");
   await expect(page.getByRole("heading", { name: "Esta HelPlis no se encuentra disponible." })).toBeVisible();
   await expect(page.getByText("No podemos mostrar informacion personal")).toBeVisible();
+
+  await page.goto("/activate/BAD1");
+  await expect(page.getByRole("heading", { name: "No pudimos identificar esta HelPlis." })).toBeVisible();
+  const invalidValidation = await page.request.post("/api/activation/validate", { data: { publicCode: "BAD1" } });
+  expect(invalidValidation.status()).toBe(404);
+  expect(await invalidValidation.json()).toMatchObject({ state: "INVALID" });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
@@ -111,7 +126,7 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.goto("/dashboard/devices/HLP001");
   await expect(page.getByRole("heading", { name: "Administrar HelPlis" })).toBeVisible();
   await expect(page.getByText("HLP001").first()).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Reasignar pulsera" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Asignar a otra persona" })).toBeVisible();
 
   await loginAs(page, "usuario@demo.helplis.cl");
   await page.goto("/dashboard/devices/HLP001");
@@ -152,6 +167,9 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.getByRole("button", { name: "Confirmar activacion" }).click();
   await expect(page.getByRole("heading", { name: "Mis dispositivos" })).toBeVisible();
   await expect(page.getByText("HLP009")).toBeVisible();
+  const usedCodeValidation = await page.request.post("/api/activation/validate", { data: { publicCode: "HLP009" } });
+  expect(usedCodeValidation.status()).toBe(409);
+  expect(await usedCodeValidation.json()).toMatchObject({ state: "ACTIVE", publicProfileUrl: "/p/HLP009" });
 
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: -33.45, longitude: -70.66 });
@@ -174,21 +192,25 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByRole("heading", { name: "Administrar HelPlis" })).toBeVisible();
   await expect(page.getByText("ACTIVE")).toBeVisible();
   await expect(page.getByText("04:DE:MO:009")).toBeVisible();
+  await expect(page.getByText("Escaneos conservados")).toBeVisible();
   const reassignForm = page.locator("form").filter({ hasText: "Crear nuevo perfil" });
   await reassignForm.getByLabel("Nombre visible").fill("Perfil Reasignado E2E");
   await reassignForm.getByLabel("Mensaje de ayuda").fill("Esta persona usa una HelPlis reasignada.");
-  await reassignForm.getByRole("button", { name: "Crear perfil y reasignar" }).click();
+  await reassignForm.getByRole("button", { name: "Crear perfil y asignar" }).click();
   await expect(page).toHaveURL(/confirmation_required/);
 
   const confirmedReassignForm = page.locator("form").filter({ hasText: "Crear nuevo perfil" });
   await confirmedReassignForm.getByLabel("Nombre visible").fill("Perfil Reasignado E2E");
   await confirmedReassignForm.getByLabel("Mensaje de ayuda").fill("Esta persona usa una HelPlis reasignada.");
+  await confirmedReassignForm.getByLabel("Motivo opcional").fill("Cambio de persona para prueba E2E.");
   await confirmedReassignForm.getByLabel("Confirmo que quiero reasignar").check();
-  await confirmedReassignForm.getByRole("button", { name: "Crear perfil y reasignar" }).click();
+  await confirmedReassignForm.getByRole("button", { name: "Crear perfil y asignar" }).click();
   await expect(page).toHaveURL(/reassigned=1/);
   await expect(page.getByText("Reasignacion guardada con auditoria")).toBeVisible();
   await expect(page.getByText("HLP009").first()).toBeVisible();
   await expect(page.getByText("04:DE:MO:009")).toBeVisible();
+  await expect(page.getByText("REASSIGNED")).toBeVisible();
+  await expect(page.getByText("Escaneos conservados")).toBeVisible();
 
   await page.goto("/p/HLP009");
   await expect(page.getByRole("heading", { name: "Perfil Reasignado E2E" })).toBeVisible();
@@ -210,9 +232,21 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.getByLabel("Contraseña").fill("HelPlisDemo123!");
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page.getByRole("heading", { name: "Panel administrador" })).toBeVisible();
+  await page.goto("/admin/devices");
+  await page.locator("section").filter({ hasText: "HLP009" }).first().getByRole("button", { name: "Suspender" }).click();
+  await expect(page).toHaveURL(/status=updated/);
+  await page.goto("/p/HLP009");
+  await expect(page.getByRole("heading", { name: "Esta HelPlis no se encuentra disponible temporalmente." })).toBeVisible();
+  await expect(page.getByText("Perfil Reasignado E2E")).not.toBeVisible();
+  await page.goto("/admin/devices");
+  await page.locator("section").filter({ hasText: "HLP009" }).first().getByRole("button", { name: "Reactivar" }).click();
+  await expect(page).toHaveURL(/status=updated/);
+  await page.goto("/p/HLP009");
+  await expect(page.getByRole("heading", { name: "Perfil Reasignado E2E" })).toBeVisible();
   await page.goto("/admin/audit");
   await expect(page.getByRole("heading", { name: "DEVICE_PROFILE_REASSIGNED" }).first()).toBeVisible();
   await expect(page.getByText("HLP009").first()).toBeVisible();
+  await expect(page.getByText("DEVICE_MANAGEMENT_FORBIDDEN").first()).toBeVisible();
   await page.goto("/admin/notifications");
   await expect(page.getByRole("heading", { name: "PURCHASE_INTENT_CREATED" }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "LOCATION_SHARED" }).first()).toBeVisible();

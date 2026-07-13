@@ -71,24 +71,46 @@ export type ActivationInput = z.infer<typeof activationInputSchema>;
 
 export async function validateActivationPublicCode(publicCode: string) {
   const normalizedCode = normalizePublicCode(publicCode);
-  if (!normalizedCode) return { ok: false, reason: "invalid" as const, publicCode: "", activationState: null };
+  if (!normalizedCode) return invalidValidationResponse("");
 
   const device = await prisma.device.findUnique({
     where: { publicCode: normalizedCode },
-    select: { publicCode: true, status: true, productType: true },
+    select: { publicCode: true, status: true },
   });
 
-  if (!device) return { ok: false, reason: "invalid" as const, publicCode: normalizedCode, activationState: null };
+  if (!device) return invalidValidationResponse(normalizedCode);
 
-  const activationState = getDeviceActivationState(device.status);
+  const state = getDeviceActivationState(device.status);
   const canActivate = canActivateStatus(device.status);
+  if (canActivate) {
+    return {
+      ok: true,
+      reason: null,
+      state,
+      publicCode: device.publicCode,
+    };
+  }
+
   return {
-    ok: canActivate,
-    reason: canActivate ? null : activationState === "ACTIVE" ? ("activated" as const) : ("unavailable" as const),
+    ok: false,
+    reason: state === "ACTIVE" ? ("activated" as const) : ("unavailable" as const),
+    state,
     publicCode: device.publicCode,
-    status: device.status,
-    activationState,
-    productType: device.productType,
+    ...(state === "ACTIVE"
+      ? {
+          publicProfileUrl: `/p/${device.publicCode}`,
+          managementUrl: `/dashboard/devices/${device.publicCode}`,
+        }
+      : {}),
+  };
+}
+
+function invalidValidationResponse(publicCode: string) {
+  return {
+    ok: false,
+    reason: "invalid" as const,
+    state: "INVALID" as const,
+    publicCode,
   };
 }
 

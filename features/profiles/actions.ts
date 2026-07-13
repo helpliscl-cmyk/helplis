@@ -189,6 +189,11 @@ export async function reassignDeviceProfileAction(formData: FormData) {
   const deviceId = String(formData.get("deviceId") ?? "");
   const assignmentMode = String(formData.get("assignmentMode") ?? "");
   const confirmed = parseBooleanFormValue(formData.get("confirmReassign"));
+  const reassignmentReason =
+    String(formData.get("reassignmentReason") ?? "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .slice(0, 300) || null;
 
   const device = await getDeviceWithManagePermission(user, deviceId);
   if (!device) redirect("/dashboard/devices?error=forbidden");
@@ -197,6 +202,7 @@ export async function reassignDeviceProfileAction(formData: FormData) {
   }
   if (!confirmed) redirect(`/dashboard/devices/${device.publicCode}?error=confirmation_required`);
 
+  const profileOwnerId = device.ownerId ?? user.id;
   const previousSnapshot = {
     publicCode: device.publicCode,
     nfcUid: device.nfcUid,
@@ -212,7 +218,7 @@ export async function reassignDeviceProfileAction(formData: FormData) {
   if (assignmentMode === "existing") {
     const profileId = String(formData.get("profileId") ?? "");
     const profile = await prisma.profile.findFirst({
-      where: { id: profileId, ownerId: user.id, deletedAt: null },
+      where: { id: profileId, ownerId: profileOwnerId, deletedAt: null },
       select: { id: true },
     });
     if (!profile) redirect(`/dashboard/devices/${device.publicCode}?error=profile_forbidden`);
@@ -228,7 +234,7 @@ export async function reassignDeviceProfileAction(formData: FormData) {
 
     const profile = await prisma.profile.create({
       data: {
-        ownerId: user.id,
+        ownerId: profileOwnerId,
         ...parsed.data,
         firstName: parsed.data.displayName,
         showPhoto: true,
@@ -270,13 +276,14 @@ export async function reassignDeviceProfileAction(formData: FormData) {
 
   if (nextProfileId === device.profileId) redirect(`/dashboard/devices/${device.publicCode}?error=same_profile`);
 
+  const reassignedAt = new Date();
   await prisma.$transaction(async (tx) => {
     await tx.device.update({
       where: { id: device.id },
       data: {
         profileId: nextProfileId,
         status: "ACTIVATED",
-        activatedAt: device.activatedAt ?? new Date(),
+        activatedAt: device.activatedAt ?? reassignedAt,
       },
     });
 
@@ -296,6 +303,9 @@ export async function reassignDeviceProfileAction(formData: FormData) {
           previousProfileId: device.profileId,
           profileId: nextProfileId,
           status: "ACTIVATED",
+          reassignedAt: reassignedAt.toISOString(),
+          actorUserId: user.id,
+          reason: reassignmentReason,
         }),
       },
     });
@@ -311,6 +321,7 @@ export async function reassignDeviceProfileAction(formData: FormData) {
       previousProfileId: device.profileId,
       profileId: nextProfileId,
       reassigned: true,
+      reason: reassignmentReason,
     },
   });
 

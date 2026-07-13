@@ -16,7 +16,31 @@ export default async function ActivatePublicCodePage({
   const normalizedCode = publicCode.toUpperCase();
   const validation = await validateActivationPublicCode(normalizedCode);
 
-  if (validation.reason === "activated" && validation.publicCode) {
+  if (validation.state === "INVALID") {
+    return (
+      <ActivationStatePage>
+        <Card className="mx-auto grid max-w-xl gap-4 p-5">
+          <CardHeader>
+            <CardTitle>No pudimos identificar esta HelPlis.</CardTitle>
+            <CardDescription>Revisa el QR, acerca nuevamente el NFC o ingresa el codigo manualmente.</CardDescription>
+          </CardHeader>
+          <ButtonLink href="/activate" variant="secondary">
+            Reintentar escaneo
+          </ButtonLink>
+        </Card>
+      </ActivationStatePage>
+    );
+  }
+
+  if (validation.state === "ACTIVE" && validation.publicCode) {
+    const publicProfileUrl =
+      "publicProfileUrl" in validation && validation.publicProfileUrl
+        ? validation.publicProfileUrl
+        : `/p/${validation.publicCode}`;
+    const managementUrl =
+      "managementUrl" in validation && validation.managementUrl
+        ? validation.managementUrl
+        : `/dashboard/devices/${validation.publicCode}`;
     return (
       <ActivationStatePage>
         <Card className="mx-auto grid max-w-xl gap-4 p-5">
@@ -27,8 +51,8 @@ export default async function ActivatePublicCodePage({
             </CardDescription>
           </CardHeader>
           <div className="flex flex-wrap gap-2">
-            <ButtonLink href={`/p/${validation.publicCode}`}>Ver perfil de ayuda</ButtonLink>
-            <ButtonLink href={`/dashboard/devices/${validation.publicCode}`} variant="secondary">
+            <ButtonLink href={publicProfileUrl}>Ver perfil de ayuda</ButtonLink>
+            <ButtonLink href={managementUrl} variant="secondary">
               Administrar HelPlis
             </ButtonLink>
           </div>
@@ -37,8 +61,8 @@ export default async function ActivatePublicCodePage({
     );
   }
 
-  if (validation.reason === "unavailable" && validation.publicCode) {
-    const isSuspended = validation.activationState === "SUSPENDED";
+  if ((validation.state === "SUSPENDED" || validation.state === "DISABLED") && validation.publicCode) {
+    const isSuspended = validation.state === "SUSPENDED";
     return (
       <ActivationStatePage>
         <Card className="mx-auto grid max-w-xl gap-4 p-5">

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Badge, statusTone } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { updateAdminDeviceStatusAction } from "@/features/admin/actions";
 import { prisma } from "@/server/db/client";
 
 export default async function AdminDevicesPage() {
@@ -29,6 +31,21 @@ export default async function AdminDevicesPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={statusTone(device.status)}>{device.status}</Badge>
               <Link href={`/p/${device.publicCode}`} className="rounded-md border border-neutral-300 px-3 py-2 text-sm">Ficha</Link>
+              <form action={updateAdminDeviceStatusAction}>
+                <input type="hidden" name="deviceId" value={device.id} />
+                <input type="hidden" name="status" value="SUSPENDED" />
+                <Button type="submit" variant="secondary">Suspender</Button>
+              </form>
+              <form action={updateAdminDeviceStatusAction}>
+                <input type="hidden" name="deviceId" value={device.id} />
+                <input type="hidden" name="status" value="ACTIVATED" />
+                <Button type="submit" variant="secondary">Reactivar</Button>
+              </form>
+              <form action={updateAdminDeviceStatusAction}>
+                <input type="hidden" name="deviceId" value={device.id} />
+                <input type="hidden" name="status" value="DEACTIVATED" />
+                <Button type="submit" variant="danger">Deshabilitar</Button>
+              </form>
             </div>
           </Card>
         ))}

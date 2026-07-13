@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { ProductType } from "@prisma/client";
+import { DeviceStatus, ProductType } from "@prisma/client";
 import { requireRole } from "@/lib/auth/session";
 import { hashActivationCode } from "@/lib/security/hashing";
 import { prisma } from "@/server/db/client";
@@ -55,6 +55,64 @@ export async function createBatchAction(formData: FormData) {
   });
 
   redirect(`/admin/batches?created=${batch.id}`);
+}
+
+export async function updateAdminDeviceStatusAction(formData: FormData) {
+  const user = await requireRole(["ADMIN", "SUPER_ADMIN", "SUPPORT"]);
+  const deviceId = String(formData.get("deviceId") ?? "");
+  const status = String(formData.get("status") ?? "");
+  if (!["ACTIVATED", "SUSPENDED", "DEACTIVATED"].includes(status)) redirect("/admin/devices?error=invalid");
+
+  const device = await prisma.device.findUnique({
+    where: { id: deviceId },
+    select: {
+      id: true,
+      publicCode: true,
+      status: true,
+      ownerId: true,
+      profileId: true,
+      nfcUid: true,
+      qrContent: true,
+      nfcContent: true,
+    },
+  });
+  if (!device) redirect("/admin/devices?error=not_found");
+
+  const nextStatus = status as DeviceStatus;
+  const changedAt = new Date();
+  await prisma.device.update({
+    where: { id: device.id },
+    data: {
+      status: nextStatus,
+      suspendedAt: nextStatus === "SUSPENDED" ? changedAt : null,
+      deactivatedAt: nextStatus === "DEACTIVATED" ? changedAt : null,
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: user.id,
+      action: "ADMIN_DEVICE_STATUS_UPDATED",
+      entityType: "Device",
+      entityId: device.id,
+      previousData: JSON.stringify({
+        publicCode: device.publicCode,
+        status: device.status,
+        ownerId: device.ownerId,
+        profileId: device.profileId,
+        nfcUid: device.nfcUid,
+        qrContent: device.qrContent,
+        nfcContent: device.nfcContent,
+      }),
+      newData: JSON.stringify({
+        publicCode: device.publicCode,
+        status: nextStatus,
+        changedAt: changedAt.toISOString(),
+      }),
+    },
+  });
+
+  redirect("/admin/devices?status=updated");
 }
 
 export async function importCsvAction(formData: FormData) {

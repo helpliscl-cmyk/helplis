@@ -27,9 +27,9 @@ type ValidationResult = {
   ok: boolean;
   reason?: "invalid" | "unavailable" | "activated" | null;
   publicCode: string;
-  status?: string;
-  activationState?: "UNACTIVATED" | "ACTIVE" | "SUSPENDED" | "DISABLED" | null;
-  productType?: string;
+  state?: "UNACTIVATED" | "ACTIVE" | "SUSPENDED" | "DISABLED" | "INVALID";
+  publicProfileUrl?: string;
+  managementUrl?: string;
 };
 
 const steps = [
@@ -111,7 +111,7 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
     });
     const payload = (await response.json().catch(() => null)) as ValidationResult | null;
     if (!response.ok || !payload?.ok) {
-      if (payload?.reason === "activated" && payload.publicCode) {
+      if (payload?.state === "ACTIVE" && payload.publicCode) {
         stopCamera();
         setActivatedPublicCode(payload.publicCode);
         setPublicCode("");
@@ -120,7 +120,15 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
         return;
       }
       setActivatedPublicCode(null);
-      setScanStatus(payload?.reason === "unavailable" ? "Esta HelPlis no esta disponible para activar." : "Codigo no valido.");
+      if (payload?.state === "SUSPENDED") {
+        setScanStatus("Esta HelPlis no se encuentra disponible temporalmente.");
+        return;
+      }
+      if (payload?.state === "DISABLED") {
+        setScanStatus("Esta HelPlis no se encuentra disponible.");
+        return;
+      }
+      setScanStatus("No pudimos identificar esta HelPlis.");
       return;
     }
 

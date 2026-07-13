@@ -19,6 +19,7 @@ describe("reglas de dispositivo", () => {
     expect(getDeviceActivationState("DEACTIVATED")).toBe("DISABLED");
     expect(getDeviceActivationState("REPLACED")).toBe("DISABLED");
     expect(getDeviceActivationState("DAMAGED")).toBe("DISABLED");
+    expect(getDeviceActivationState("ACTIVATED", { reassigned: true })).toBe("REASSIGNED");
   });
 
   it("permite activar disponible", () => {

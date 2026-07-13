@@ -1,11 +1,18 @@
 import type { DeviceStatus } from "@prisma/client";
 
-export type DeviceActivationState = "UNACTIVATED" | "ACTIVE" | "SUSPENDED" | "DISABLED";
+export type PublicDeviceActivationState = "UNACTIVATED" | "ACTIVE" | "SUSPENDED" | "DISABLED";
+export type DeviceActivationState = PublicDeviceActivationState | "REASSIGNED";
 
-export function getDeviceActivationState(status: DeviceStatus): DeviceActivationState {
+export function getDeviceActivationState(status: DeviceStatus): PublicDeviceActivationState;
+export function getDeviceActivationState(status: DeviceStatus, options: { reassigned?: boolean }): DeviceActivationState;
+export function getDeviceActivationState(
+  status: DeviceStatus,
+  options: { reassigned?: boolean } = {},
+): DeviceActivationState {
   if (["AVAILABLE", "UNASSIGNED", "RESERVED"].includes(status)) return "UNACTIVATED";
   if (status === "SUSPENDED") return "SUSPENDED";
   if (["DEACTIVATED", "REPLACED", "DAMAGED"].includes(status)) return "DISABLED";
+  if (options.reassigned) return "REASSIGNED";
   return "ACTIVE";
 }
 
