@@ -42,3 +42,11 @@ El flujo permite camara, galeria, preview, reemplazo y borrado. La foto es opcio
 ## Reasignacion autenticada
 
 La reasignacion vive en dashboard, requiere permiso sobre la HelPlis y confirmacion explicita. Cambia el perfil vinculado a la ficha publica, conserva historial/auditoria y no modifica `publicCode`, QR ni UID NFC.
+
+## Actualizacion de estados
+
+- Estados controlados: `UNACTIVATED`, `ACTIVE`, `SUSPENDED`, `DISABLED`, `REASSIGNED`.
+- `REASSIGNED` se usa en dashboard cuando una HelPlis activa cambio de perfil con audit log.
+- La accion visible es "Asignar a otra persona".
+- La confirmacion muestra que la persona asociada sera reemplazada y el historial se conservara.
+- La reasignacion registra fecha, usuario y motivo opcional.

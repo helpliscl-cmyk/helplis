@@ -33,3 +33,19 @@ Fecha: 2026-07-13
 4. Llamada y WhatsApp se resuelven por endpoint seguro.
 5. La ubicacion del scanner solo se envia si acepta compartirla.
 6. La informacion critica aparece solo si existe y `showCriticalInformation = true`.
+
+## Estados al escanear
+
+- `UNACTIVATED`: redirige a activacion con `publicCode` precargado.
+- `ACTIVE`: muestra ficha publica, registra escaneo y respeta privacidad.
+- `SUSPENDED`: muestra pantalla neutra temporal, sin datos personales, con soporte.
+- `DISABLED`: muestra pantalla neutra, sin datos personales.
+- `REASSIGNED`: muestra el perfil nuevo vinculado al mismo `publicCode`.
+
+## Administracion y reasignacion
+
+1. "Administrar HelPlis" exige login.
+2. El servidor valida propietario, rol admin/soporte o membresia autorizada.
+3. Un usuario ajeno ve un mensaje neutro y se registra auditoria.
+4. "Asignar a otra persona" permite seleccionar perfil existente o crear uno nuevo.
+5. `publicCode`, QR, UID NFC, escaneos y auditoria se conservan.

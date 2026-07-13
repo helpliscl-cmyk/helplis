@@ -35,3 +35,10 @@ No se muestran listas medicas vacias ni campos irrelevantes.
 - La ubicacion del responsable nunca se muestra.
 - La ubicacion del scanner solo se envia tras accion explicita.
 - Datos legacy de mascotas, objetos y medicina granular no aparecen en flujos nuevos.
+
+## Estados
+
+- Una HelPlis no activada no muestra ficha publica.
+- Una HelPlis activa registra escaneo y muestra solo datos autorizados.
+- Una HelPlis suspendida o deshabilitada no muestra nombre, foto, contactos ni informacion critica.
+- Una HelPlis reasignada muestra solamente el perfil nuevo vinculado al `publicCode`.

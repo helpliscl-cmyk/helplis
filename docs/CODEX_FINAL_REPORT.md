@@ -166,3 +166,13 @@ Cierre productivo local:
 - Informacion critica se captura en un solo campo y se publica solo con `showCriticalInformation`.
 - Ficha publica muestra `Informacion importante` solo si existe y esta autorizada.
 - Tests agregados: schema de activacion people-first, privacidad critica, E2E de foto y opciones comerciales para personas.
+
+# Device state handling update - 2026-07-13
+
+- Estados normalizados: `UNACTIVATED`, `ACTIVE`, `SUSPENDED`, `DISABLED`, `REASSIGNED`.
+- `/api/activation/validate` devuelve estado controlado sin datos privados.
+- `/activate/[publicCode]` bloquea pulseras activas y muestra acciones seguras.
+- `/p/[publicCode]` muestra pantallas neutras para suspendidas/deshabilitadas.
+- `/dashboard/devices/[publicCode]` administra con permisos y permite asignar a otra persona.
+- Reasignacion conserva publicCode, QR, UID NFC, escaneos y auditoria; registra usuario, fecha y motivo opcional.
+- Admin/soporte puede suspender, reactivar o deshabilitar desde `/admin/devices` con audit log.
