@@ -67,8 +67,14 @@ Validaciones parciales:
 - `npm run test -- tests/unit/public-profile-view.test.ts`
 - Verificacion local en `http://localhost:3457/p/HLP001`, `http://localhost:3457/p/HLP005` y `http://localhost:3457/activate/HLP009`.
 
+Supabase remoto:
+
+- Proyecto verificado: `helpliscl-cmyk`, rama `main`, production.
+- Migraciones nuevas aplicadas desde SQL Editor.
+- Verificacion SQL devolvio `true` para `location_shares`, `found_reports`, `production_batches`, `orders`, RPC principales, RLS de `profiles`, storage policy y bucket `profile-photos` privado.
+- Nota: se aplico primero `alter type public.app_role add value if not exists 'OPERATIONS';` por restriccion transaccional de Postgres al usar un enum nuevo en la misma ejecucion.
+
 Pendiente para cierre productivo:
 
-- Aplicar migraciones al Supabase remoto confirmado.
 - Ejecutar suite completa y build final.
 - Desplegar Vercel y verificar produccion.
