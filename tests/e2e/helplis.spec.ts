@@ -72,14 +72,14 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByText("1 válidas")).toBeVisible();
 
   await page.goto("/activate/HLP009");
-  await page.getByLabel("Código secreto").fill("ACT-HLP009");
+  await page.getByLabel("Codigo secreto").fill("ACT-HLP009");
   await page.getByLabel("Nombre responsable").fill("Responsable E2E");
   await page.getByLabel("Correo").fill(`e2e-${Date.now()}@example.test`);
-  await page.getByLabel("Contraseña").fill("HelPlisDemo123!");
-  await page.getByLabel("Nombre visible o alias").fill("Perfil E2E");
-  await page.getByLabel("Contacto principal").fill("Contacto E2E");
-  await page.getByLabel("Teléfono contacto").fill("+56912345678");
-  await page.getByRole("button", { name: "Confirmar activación" }).click();
+  await page.getByLabel("Contrasena").fill("HelPlisDemo123!");
+  await page.getByLabel("Nombre visible").fill("Perfil E2E");
+  await page.getByLabel("Contacto 1").fill("Contacto E2E");
+  await page.getByLabel("Telefono").first().fill("+56912345678");
+  await page.getByRole("button", { name: "Confirmar activacion" }).click();
   await expect(page.getByRole("heading", { name: "Mis dispositivos" })).toBeVisible();
   await expect(page.getByText("HLP009")).toBeVisible();
 
@@ -87,8 +87,8 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await context.setGeolocation({ latitude: -33.45, longitude: -70.66 });
   await page.goto("/p/HLP009");
   await expect(page.getByRole("heading", { name: "Perfil E2E" })).toBeVisible();
-  await page.getByRole("button", { name: "Compartir mi ubicación con el responsable" }).click();
-  await expect(page.getByText("Ubicación compartida")).toBeVisible();
+  await page.getByRole("button", { name: "Compartir mi ubicacion con el responsable" }).click();
+  await expect(page.getByText("Ubicacion compartida")).toBeVisible();
 
   await page.goto("/dashboard/devices");
   await page.getByRole("button", { name: "Marcar perdido" }).first().click();
