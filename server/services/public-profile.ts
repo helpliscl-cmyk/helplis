@@ -209,7 +209,7 @@ export async function recordPublicContactAction({
 
   if (action === "LOCATION_SHARED") {
     await prisma.scanEvent.update({
-      where: { id: scanId },
+      where: { id: scan.id },
       data: {
         latitude,
         longitude,
