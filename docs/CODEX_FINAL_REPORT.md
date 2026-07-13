@@ -16,7 +16,16 @@ HelPlis now has an operational backbone for demo/sample production, supplier fil
 
 ## Validation status
 
-During development, lint and typecheck passed repeatedly after each module. Final full validation is recorded in the deployment notes for this run.
+During development, lint and typecheck passed repeatedly after each module. On 2026-07-13, after merging `feature/supabase-integration` into `main`, the complete local validation suite passed:
+
+- `npm install`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test`
+- `npm run test:e2e`
+- `npm run build`
+
+`npm audit --audit-level=moderate` still reports 2 moderate findings from `next` -> `postcss`; the suggested `npm audit fix --force` is breaking and was not applied in this regularization pass.
 
 ## Commits
 
@@ -74,7 +83,67 @@ Supabase remoto:
 - Verificacion SQL devolvio `true` para `location_shares`, `found_reports`, `production_batches`, `orders`, RPC principales, RLS de `profiles`, storage policy y bucket `profile-photos` privado.
 - Nota: se aplico primero `alter type public.app_role add value if not exists 'OPERATIONS';` por restriccion transaccional de Postgres al usar un enum nuevo en la misma ejecucion.
 
-Pendiente para cierre productivo:
+Cierre productivo local:
 
-- Ejecutar suite completa y build final.
-- Desplegar Vercel y verificar produccion.
+- Suite completa y build final ejecutados en `main`.
+- `package-lock.json` quedo normalizado por `npm install` con Node `v22.16.0` y npm `11.6.1`.
+- La verificacion y redeploy de Vercel quedan documentados en la seccion de regularizacion de ramas.
+
+# Branch regularization - 2026-07-13
+
+## Estado inicial
+
+- Rama activa al inicio: `feature/supabase-integration`
+- Working tree: limpio
+- `origin/main`: `2f8ddf4`
+- `origin/feature/supabase-integration`: `5615f0a`
+- No existia `main` local; se creo tracking de `origin/main`.
+- `feature/supabase-integration` estaba 17 commits delante de `main`.
+- `main` no tenia commits exclusivos.
+
+## Revision
+
+- GitHub default branch: `main`.
+- PR abierto: ninguno.
+- Proteccion `main`: no activa segun API publica.
+- Checks GitHub:
+  - `main` en `2f8ddf4`: combined status `success`.
+  - `feature` en `5615f0a`: combined status `success`; no se observo run CI `verify` para ese SHA.
+- Vercel:
+  - Produccion `READY`.
+  - Alias `helplis.cl` activo.
+  - Deployment inspeccionada: `dpl_2BBuxS9Z8GoDYAAn16ovZSj3CjtY`.
+  - La deployment no expone metadata Git; fue publicada manualmente desde el estado local de `feature` en `5615f0a`.
+
+## Decision y accion
+
+- Integracion realizada por fast-forward:
+  - `git checkout main`
+  - `git merge --ff-only feature/supabase-integration`
+  - `git push origin main`
+- No se uso rebase, reset, force push ni eliminacion de ramas.
+- No se detectaron conflictos.
+- No se detectaron secretos ni bases locales trackeadas.
+
+## Estado final actual
+
+- `main` contiene los cambios de Supabase/perfil publico.
+- El commit desplegado `5615f0a` existe en `main`.
+- Validacion local completa pasada en `main`.
+- La rama `feature/supabase-integration` queda como rama temporal hasta confirmar CI remoto y produccion.
+
+## Validacion final en main
+
+- `npm install`: OK; actualizo metadatos de `package-lock.json`.
+- `npm run typecheck`: OK.
+- `npm run lint`: OK.
+- `npm run test`: OK, 11 archivos y 52 tests.
+- `npm run test:e2e`: OK, 1 flujo Playwright.
+- `npm run build`: OK, 51 rutas generadas.
+- `npm audit --audit-level=moderate`: 2 findings moderados heredados de `next`/`postcss`; no se aplico fix forzado.
+
+## Pendientes residuales
+
+- Confirmar nuevos checks de GitHub sobre `main`.
+- Verificar produccion luego del push documental final.
+- Recomendar eliminacion de `feature/supabase-integration` solo si queda sin commits exclusivos y produccion esta estable.
