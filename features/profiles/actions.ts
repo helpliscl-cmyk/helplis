@@ -6,6 +6,8 @@ import { requireUser } from "@/lib/auth/session";
 import { parseBooleanFormValue } from "@/lib/formatting/format";
 import { prisma } from "@/server/db/client";
 import { notificationProvider } from "@/server/notifications/provider";
+import { getDeviceWithManagePermission } from "@/server/services/device-access";
+import { getDeviceActivationState } from "@/server/services/device-rules";
 
 const profileSchema = z.object({
   type: z.enum([
@@ -18,6 +20,13 @@ const profileSchema = z.object({
   displayName: z.string().min(2),
   helpMessage: z.string().max(500).optional(),
   criticalInformation: z.string().max(700).optional(),
+});
+
+const reassignmentProfileSchema = z.object({
+  type: z.enum(["PERSON", "CHILD", "SENIOR", "DEPENDENT_PERSON", "MEDICAL_PROFILE"]).default("PERSON"),
+  displayName: z.string().trim().min(2).max(120),
+  helpMessage: z.string().trim().max(500).optional(),
+  criticalInformation: z.string().trim().max(700).optional(),
 });
 
 export async function createProfileAction(formData: FormData) {
@@ -173,4 +182,137 @@ export async function updateDeviceStatusAction(formData: FormData) {
   });
 
   redirect("/dashboard/devices?status=updated");
+}
+
+export async function reassignDeviceProfileAction(formData: FormData) {
+  const user = await requireUser();
+  const deviceId = String(formData.get("deviceId") ?? "");
+  const assignmentMode = String(formData.get("assignmentMode") ?? "");
+  const confirmed = parseBooleanFormValue(formData.get("confirmReassign"));
+
+  const device = await getDeviceWithManagePermission(user, deviceId);
+  if (!device) redirect("/dashboard/devices?error=forbidden");
+  if (getDeviceActivationState(device.status) !== "ACTIVE") {
+    redirect(`/dashboard/devices/${device.publicCode}?error=invalid_state`);
+  }
+  if (!confirmed) redirect(`/dashboard/devices/${device.publicCode}?error=confirmation_required`);
+
+  const previousSnapshot = {
+    publicCode: device.publicCode,
+    nfcUid: device.nfcUid,
+    qrContent: device.qrContent,
+    nfcContent: device.nfcContent,
+    status: device.status,
+    ownerId: device.ownerId,
+    profileId: device.profileId,
+  };
+
+  let nextProfileId: string;
+
+  if (assignmentMode === "existing") {
+    const profileId = String(formData.get("profileId") ?? "");
+    const profile = await prisma.profile.findFirst({
+      where: { id: profileId, ownerId: user.id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!profile) redirect(`/dashboard/devices/${device.publicCode}?error=profile_forbidden`);
+    nextProfileId = profile.id;
+  } else if (assignmentMode === "new") {
+    const parsed = reassignmentProfileSchema.safeParse({
+      type: formData.get("type") || "PERSON",
+      displayName: formData.get("displayName"),
+      helpMessage: formData.get("helpMessage") || undefined,
+      criticalInformation: formData.get("criticalInformation") || undefined,
+    });
+    if (!parsed.success) redirect(`/dashboard/devices/${device.publicCode}?error=invalid_profile`);
+
+    const profile = await prisma.profile.create({
+      data: {
+        ownerId: user.id,
+        ...parsed.data,
+        firstName: parsed.data.displayName,
+        showPhoto: true,
+        showDisplayName: true,
+        showAlias: false,
+        showFullName: false,
+        showContactNames: true,
+        showPhoneNumbers: false,
+        showAge: false,
+        showApproximateAge: false,
+        showMedicalInfo: false,
+        showBloodType: false,
+        showAllergies: false,
+        showMedicalConditions: false,
+        showMedications: false,
+        showMedicalInstructions: false,
+        showCommunicationNotes: false,
+        showMobilityNotes: false,
+        showSensoryNotes: false,
+        showGeneralArea: false,
+        showExactAddress: false,
+        showCriticalInformation: false,
+        showLocationButton: true,
+        showWhatsAppButton: true,
+        showCallButton: true,
+        showMessageButton: false,
+        allowCall: true,
+        allowWhatsApp: true,
+        allowMessage: false,
+        allowLocationSharing: true,
+        allowFoundReport: true,
+      },
+      select: { id: true },
+    });
+    nextProfileId = profile.id;
+  } else {
+    redirect(`/dashboard/devices/${device.publicCode}?error=invalid`);
+  }
+
+  if (nextProfileId === device.profileId) redirect(`/dashboard/devices/${device.publicCode}?error=same_profile`);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.device.update({
+      where: { id: device.id },
+      data: {
+        profileId: nextProfileId,
+        status: "ACTIVATED",
+        activatedAt: device.activatedAt ?? new Date(),
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        actorUserId: user.id,
+        action: "DEVICE_PROFILE_REASSIGNED",
+        entityType: "Device",
+        entityId: device.id,
+        previousData: JSON.stringify(previousSnapshot),
+        newData: JSON.stringify({
+          publicCode: device.publicCode,
+          nfcUid: device.nfcUid,
+          qrContent: device.qrContent,
+          nfcContent: device.nfcContent,
+          ownerId: device.ownerId,
+          previousProfileId: device.profileId,
+          profileId: nextProfileId,
+          status: "ACTIVATED",
+        }),
+      },
+    });
+  });
+
+  await notificationProvider.sendLocal({
+    userId: device.ownerId,
+    deviceId: device.id,
+    profileId: nextProfileId,
+    eventType: "PROFILE_UPDATED",
+    payload: {
+      publicCode: device.publicCode,
+      previousProfileId: device.profileId,
+      profileId: nextProfileId,
+      reassigned: true,
+    },
+  });
+
+  redirect(`/dashboard/devices/${device.publicCode}?reassigned=1`);
 }

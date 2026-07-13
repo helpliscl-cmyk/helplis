@@ -18,15 +18,17 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckboxField, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { activateDeviceAction } from "@/features/activations/actions";
 
 type ValidationResult = {
   ok: boolean;
-  reason?: "invalid" | "unavailable" | null;
+  reason?: "invalid" | "unavailable" | "activated" | null;
   publicCode: string;
   status?: string;
+  activationState?: "UNACTIVATED" | "ACTIVE" | "SUSPENDED" | "DISABLED" | null;
   productType?: string;
 };
 
@@ -64,6 +66,7 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
   const [step, setStep] = useState(initialPublicCode ? 1 : 0);
   const [publicCode, setPublicCode] = useState(initialPublicCode ?? "");
   const [manualCode, setManualCode] = useState(initialPublicCode ?? "");
+  const [activatedPublicCode, setActivatedPublicCode] = useState<string | null>(null);
   const [scanStatus, setScanStatus] = useState<string | null>(
     initialPublicCode ? `Pulsera identificada: ${initialPublicCode}` : null,
   );
@@ -108,11 +111,21 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
     });
     const payload = (await response.json().catch(() => null)) as ValidationResult | null;
     if (!response.ok || !payload?.ok) {
-      setScanStatus(payload?.reason === "unavailable" ? "Esta pulsera no esta disponible para activar." : "Codigo no valido.");
+      if (payload?.reason === "activated" && payload.publicCode) {
+        stopCamera();
+        setActivatedPublicCode(payload.publicCode);
+        setPublicCode("");
+        setManualCode(payload.publicCode);
+        setScanStatus("Esta HelPlis ya está activada.");
+        return;
+      }
+      setActivatedPublicCode(null);
+      setScanStatus(payload?.reason === "unavailable" ? "Esta HelPlis no esta disponible para activar." : "Codigo no valido.");
       return;
     }
 
     stopCamera();
+    setActivatedPublicCode(null);
     setPublicCode(payload.publicCode);
     setManualCode(payload.publicCode);
     setScanStatus(`Pulsera identificada: ${payload.publicCode}`);
@@ -282,6 +295,7 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
               </Button>
             </div>
             {scanStatus ? <Status>{scanStatus}</Status> : null}
+            {activatedPublicCode ? <AlreadyActivatedActions publicCode={activatedPublicCode} /> : null}
         </section>
 
         <section className={step === 1 ? "grid gap-4" : "hidden"}>
@@ -498,6 +512,23 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
         </div>
       </form>
     </Card>
+  );
+}
+
+export function AlreadyActivatedActions({ publicCode }: { publicCode: string }) {
+  return (
+    <div className="grid gap-3 rounded-md border border-[var(--brand-border)] bg-white p-4">
+      <h2 className="text-lg font-semibold">Esta HelPlis ya está activada.</h2>
+      <p className="text-sm leading-6 text-[var(--brand-muted)]">
+        Para proteger el perfil, no se puede reactivar ni sobrescribir desde el flujo publico.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <ButtonLink href={`/p/${publicCode}`}>Ver perfil de ayuda</ButtonLink>
+        <ButtonLink href={`/dashboard/devices/${publicCode}`} variant="secondary">
+          Administrar HelPlis
+        </ButtonLink>
+      </div>
+    </div>
   );
 }
 

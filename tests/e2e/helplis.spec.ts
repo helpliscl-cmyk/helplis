@@ -22,6 +22,16 @@ async function submitLead(page: Page, pack: "1" | "2" | "3", name: string, expec
   await expect(page.getByRole("link", { name: "Abrir WhatsApp" })).toHaveAttribute("href", /wa\.me\/56988455230/);
 }
 
+async function loginAs(page: Page, email: string) {
+  await page.goto("/login");
+  await page.getByLabel("Correo").fill(email);
+  await page.getByLabel(/Contrase/i).fill("HelPlisDemo123!");
+  await Promise.all([
+    page.waitForURL(/\/(dashboard|admin)/),
+    page.getByRole("button", { name: "Entrar" }).click(),
+  ]);
+}
+
 test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Si necesita ayuda, que sepan a quien llamar." })).toBeVisible();
@@ -29,6 +39,28 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByText("$18.000").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Elige tu HelPlis" })).toBeVisible();
   await expect(page.getByText("Tiene costo mensual?")).toBeVisible();
+
+  await page.goto("/p/HLP010");
+  await expect(page.getByRole("heading", { name: "Esta pulsera todavia no ha sido activada." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Iniciar activacion" })).toHaveAttribute("href", "/activate/HLP010");
+
+  await page.goto("/p/HLP001");
+  await expect(page.getByRole("heading", { name: "Mati" })).toBeVisible();
+  await expect(page.getByText("Estoy con una pulsera HelPlis")).toBeVisible();
+
+  await page.goto("/activate/HLP001");
+  await expect(page.getByText("Esta HelPlis ya está activada.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver perfil de ayuda" })).toHaveAttribute("href", "/p/HLP001");
+  await expect(page.getByRole("link", { name: "Administrar HelPlis" })).toHaveAttribute("href", "/dashboard/devices/HLP001");
+
+  await page.goto("/p/HLP013");
+  await expect(page.getByRole("heading", { name: "Esta HelPlis no se encuentra disponible temporalmente." })).toBeVisible();
+  await expect(page.getByText("No podemos mostrar informacion personal")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Contactar soporte" })).toBeVisible();
+
+  await page.goto("/p/HLP014");
+  await expect(page.getByRole("heading", { name: "Esta HelPlis no se encuentra disponible." })).toBeVisible();
+  await expect(page.getByText("No podemos mostrar informacion personal")).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
@@ -74,6 +106,17 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByRole("heading", { name: `e2e-${importCode}.csv` })).toBeVisible();
   await expect(page.getByText("1 válidas")).toBeVisible();
   await expect(page.getByText(`Fila 1: ${importCode}`)).toBeVisible();
+
+  await loginAs(page, "familia@demo.helplis.cl");
+  await page.goto("/dashboard/devices/HLP001");
+  await expect(page.getByRole("heading", { name: "Administrar HelPlis" })).toBeVisible();
+  await expect(page.getByText("HLP001").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Reasignar pulsera" })).toBeVisible();
+
+  await loginAs(page, "usuario@demo.helplis.cl");
+  await page.goto("/dashboard/devices/HLP001");
+  await expect(page.getByText("No tienes permisos para administrar esta HelPlis.")).toBeVisible();
+  await expect(page.getByText("Mateo")).not.toBeVisible();
 
   await page.goto("/activate/HLP009");
   await page.getByLabel("Codigo secreto").fill("ACT-HLP009");
@@ -127,6 +170,31 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByText("Informacion importante")).toBeVisible();
   await expect(page.getByText("Puede desorientarse")).toBeVisible();
 
+  await page.goto("/dashboard/devices/HLP009");
+  await expect(page.getByRole("heading", { name: "Administrar HelPlis" })).toBeVisible();
+  await expect(page.getByText("ACTIVE")).toBeVisible();
+  await expect(page.getByText("04:DE:MO:009")).toBeVisible();
+  const reassignForm = page.locator("form").filter({ hasText: "Crear nuevo perfil" });
+  await reassignForm.getByLabel("Nombre visible").fill("Perfil Reasignado E2E");
+  await reassignForm.getByLabel("Mensaje de ayuda").fill("Esta persona usa una HelPlis reasignada.");
+  await reassignForm.getByRole("button", { name: "Crear perfil y reasignar" }).click();
+  await expect(page).toHaveURL(/confirmation_required/);
+
+  const confirmedReassignForm = page.locator("form").filter({ hasText: "Crear nuevo perfil" });
+  await confirmedReassignForm.getByLabel("Nombre visible").fill("Perfil Reasignado E2E");
+  await confirmedReassignForm.getByLabel("Mensaje de ayuda").fill("Esta persona usa una HelPlis reasignada.");
+  await confirmedReassignForm.getByLabel("Confirmo que quiero reasignar").check();
+  await confirmedReassignForm.getByRole("button", { name: "Crear perfil y reasignar" }).click();
+  await expect(page).toHaveURL(/reassigned=1/);
+  await expect(page.getByText("Reasignacion guardada con auditoria")).toBeVisible();
+  await expect(page.getByText("HLP009").first()).toBeVisible();
+  await expect(page.getByText("04:DE:MO:009")).toBeVisible();
+
+  await page.goto("/p/HLP009");
+  await expect(page.getByRole("heading", { name: "Perfil Reasignado E2E" })).toBeVisible();
+  await expect(page.getByText("Esta persona usa una HelPlis reasignada.")).toBeVisible();
+  expect(await page.content()).not.toContain("Puede desorientarse");
+
   await page.goto("/dashboard/devices");
   await page.getByRole("button", { name: "Marcar perdido" }).first().click();
   await expect(page.getByText("LOST")).toBeVisible();
@@ -142,6 +210,9 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.getByLabel("Contraseña").fill("HelPlisDemo123!");
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page.getByRole("heading", { name: "Panel administrador" })).toBeVisible();
+  await page.goto("/admin/audit");
+  await expect(page.getByRole("heading", { name: "DEVICE_PROFILE_REASSIGNED" }).first()).toBeVisible();
+  await expect(page.getByText("HLP009").first()).toBeVisible();
   await page.goto("/admin/notifications");
   await expect(page.getByRole("heading", { name: "PURCHASE_INTENT_CREATED" }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "LOCATION_SHARED" }).first()).toBeVisible();

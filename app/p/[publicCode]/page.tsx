@@ -50,12 +50,17 @@ export default async function PublicProfilePage({
   }
 
   if (result.status === "UNAVAILABLE") {
+    const isSuspended = result.activationState === "SUSPENDED";
     return (
       <PublicState
-        title="Ficha no disponible"
-        description={`El dispositivo esta en estado ${result.deviceStatus}. Contacta soporte si necesitas ayuda.`}
-        actionHref="/support"
-        actionLabel="Contactar soporte"
+        title={
+          isSuspended
+            ? "Esta HelPlis no se encuentra disponible temporalmente."
+            : "Esta HelPlis no se encuentra disponible."
+        }
+        description="No podemos mostrar informacion personal de esta HelPlis."
+        actionHref={isSuspended ? "/support" : undefined}
+        actionLabel={isSuspended ? "Contactar soporte" : undefined}
       />
     );
   }

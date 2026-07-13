@@ -60,6 +60,9 @@ export default async function DashboardDevicesPage() {
               <Link className="rounded-md border border-neutral-300 px-3 py-2 text-sm" href={`/p/${device.publicCode}`}>
                 Vista pública
               </Link>
+              <Link className="rounded-md border border-neutral-300 px-3 py-2 text-sm" href={`/dashboard/devices/${device.publicCode}`}>
+                Administrar
+              </Link>
               <form action={updateDeviceStatusAction}>
                 <input type="hidden" name="deviceId" value={device.id} />
                 <input type="hidden" name="status" value="LOST" />
@@ -69,11 +72,6 @@ export default async function DashboardDevicesPage() {
                 <input type="hidden" name="deviceId" value={device.id} />
                 <input type="hidden" name="status" value="FOUND" />
                 <Button type="submit" variant="secondary">Marcar encontrado</Button>
-              </form>
-              <form action={updateDeviceStatusAction}>
-                <input type="hidden" name="deviceId" value={device.id} />
-                <input type="hidden" name="status" value="ACTIVATED" />
-                <Button type="submit" variant="ghost">Reactivar</Button>
               </form>
             </div>
           </Card>

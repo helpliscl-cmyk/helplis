@@ -1,17 +1,28 @@
 import type { DeviceStatus } from "@prisma/client";
 
+export type DeviceActivationState = "UNACTIVATED" | "ACTIVE" | "SUSPENDED" | "DISABLED";
+
+export function getDeviceActivationState(status: DeviceStatus): DeviceActivationState {
+  if (["AVAILABLE", "UNASSIGNED", "RESERVED"].includes(status)) return "UNACTIVATED";
+  if (status === "SUSPENDED") return "SUSPENDED";
+  if (["DEACTIVATED", "REPLACED", "DAMAGED"].includes(status)) return "DISABLED";
+  return "ACTIVE";
+}
+
 export function canActivateStatus(status: DeviceStatus) {
-  return ["AVAILABLE", "UNASSIGNED", "RESERVED"].includes(status);
+  return getDeviceActivationState(status) === "UNACTIVATED";
 }
 
 export function isPubliclyUnavailableStatus(status: DeviceStatus) {
-  return ["SUSPENDED", "DEACTIVATED", "REPLACED", "DAMAGED"].includes(status);
+  return ["SUSPENDED", "DISABLED"].includes(getDeviceActivationState(status));
 }
 
 export function scanStatusMessage(status: DeviceStatus) {
   if (status === "LOST") return "Modo perdido";
   if (status === "FOUND") return "Marcado como encontrado";
-  if (canActivateStatus(status)) return "No activado";
-  if (isPubliclyUnavailableStatus(status)) return "No disponible";
+  const activationState = getDeviceActivationState(status);
+  if (activationState === "UNACTIVATED") return "No activado";
+  if (activationState === "SUSPENDED") return "Suspendido temporalmente";
+  if (activationState === "DISABLED") return "No disponible";
   return "Activo";
 }

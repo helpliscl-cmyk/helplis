@@ -9,17 +9,24 @@ import {
 import { prisma } from "@/server/db/client";
 import { notificationProvider } from "@/server/notifications/provider";
 import { checkRateLimit } from "@/server/security/rate-limit";
+import { getDeviceActivationState, isPubliclyUnavailableStatus } from "@/server/services/device-rules";
 
 export type PublicProfileResult =
   | { status: "INVALID_CODE"; publicCode: string }
-  | { status: "NOT_ACTIVATED"; publicCode: string; deviceStatus: string }
-  | { status: "UNAVAILABLE"; publicCode: string; deviceStatus: string }
+  | { status: "NOT_ACTIVATED"; publicCode: string; deviceStatus: string; activationState: "UNACTIVATED" }
+  | {
+      status: "UNAVAILABLE";
+      publicCode: string;
+      deviceStatus: string;
+      activationState: "SUSPENDED" | "DISABLED" | "ACTIVE";
+    }
   | {
       status: "ACTIVE" | "LOST" | "FOUND";
       publicCode: string;
       deviceId: string;
       scanId: string;
       deviceStatus: string;
+      activationState: "ACTIVE";
       productType: string;
       profile: PublicProfileView;
       contacts: PublicContactView[];
@@ -63,11 +70,23 @@ export async function resolvePublicProfile({
 
   if (!device) return { status: "INVALID_CODE", publicCode: normalizedCode };
 
-  if (["AVAILABLE", "UNASSIGNED", "RESERVED"].includes(device.status)) {
+  const activationState = getDeviceActivationState(device.status);
+
+  if (activationState === "UNACTIVATED") {
     return {
       status: "NOT_ACTIVATED",
       publicCode: normalizedCode,
       deviceStatus: device.status,
+      activationState,
+    };
+  }
+
+  if (isPubliclyUnavailableStatus(device.status)) {
+    return {
+      status: "UNAVAILABLE",
+      publicCode: normalizedCode,
+      deviceStatus: device.status,
+      activationState,
     };
   }
 
@@ -76,14 +95,7 @@ export async function resolvePublicProfile({
       status: "UNAVAILABLE",
       publicCode: normalizedCode,
       deviceStatus: device.status,
-    };
-  }
-
-  if (["SUSPENDED", "DEACTIVATED", "REPLACED", "DAMAGED"].includes(device.status)) {
-    return {
-      status: "UNAVAILABLE",
-      publicCode: normalizedCode,
-      deviceStatus: device.status,
+      activationState,
     };
   }
 
@@ -134,6 +146,7 @@ export async function resolvePublicProfile({
     deviceId: device.id,
     scanId: scan.id,
     deviceStatus: device.status,
+    activationState: "ACTIVE",
     productType: device.productType,
     profile: publicProfile,
     contacts: publicProfile.contacts,
@@ -165,9 +178,7 @@ async function findOrCreatePublicActionScan({
     include: { profile: true },
   });
   if (!device?.profile?.isPublic) return null;
-  if (["AVAILABLE", "UNASSIGNED", "RESERVED", "SUSPENDED", "DEACTIVATED", "REPLACED", "DAMAGED"].includes(device.status)) {
-    return null;
-  }
+  if (getDeviceActivationState(device.status) !== "ACTIVE") return null;
 
   return prisma.scanEvent.create({
     data: {
@@ -318,7 +329,7 @@ export async function resolvePublicContactLink({
     },
   });
   if (!profile?.isPublic) return null;
-  if (["SUSPENDED", "DEACTIVATED", "REPLACED", "DAMAGED"].includes(scan.device.status)) return null;
+  if (getDeviceActivationState(scan.device.status) !== "ACTIVE") return null;
 
   const allowsCall = profile.allowCall && profile.showCallButton;
   const allowsWhatsapp = profile.allowWhatsApp && profile.showWhatsAppButton;

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { hashPassword, verifyActivationCode, verifyPassword } from "@/lib/security/hashing";
 import { prisma } from "@/server/db/client";
 import { notificationProvider } from "@/server/notifications/provider";
+import { canActivateStatus, getDeviceActivationState } from "@/server/services/device-rules";
 
 const personProfileTypes = ["PERSON", "CHILD", "SENIOR", "DEPENDENT_PERSON", "MEDICAL_PROFILE"] as const;
 const contactRelationships = ["MOTHER", "FATHER", "FAMILY", "RESPONSIBLE"] as const;
@@ -70,21 +71,23 @@ export type ActivationInput = z.infer<typeof activationInputSchema>;
 
 export async function validateActivationPublicCode(publicCode: string) {
   const normalizedCode = normalizePublicCode(publicCode);
-  if (!normalizedCode) return { ok: false, reason: "invalid" as const, publicCode: "" };
+  if (!normalizedCode) return { ok: false, reason: "invalid" as const, publicCode: "", activationState: null };
 
   const device = await prisma.device.findUnique({
     where: { publicCode: normalizedCode },
     select: { publicCode: true, status: true, productType: true },
   });
 
-  if (!device) return { ok: false, reason: "invalid" as const, publicCode: normalizedCode };
+  if (!device) return { ok: false, reason: "invalid" as const, publicCode: normalizedCode, activationState: null };
 
-  const canActivate = ["AVAILABLE", "UNASSIGNED", "RESERVED"].includes(device.status);
+  const activationState = getDeviceActivationState(device.status);
+  const canActivate = canActivateStatus(device.status);
   return {
     ok: canActivate,
-    reason: canActivate ? null : ("unavailable" as const),
+    reason: canActivate ? null : activationState === "ACTIVE" ? ("activated" as const) : ("unavailable" as const),
     publicCode: device.publicCode,
     status: device.status,
+    activationState,
     productType: device.productType,
   };
 }
@@ -96,8 +99,9 @@ export async function activateDevice(input: ActivationInput) {
   const device = await prisma.device.findUnique({ where: { publicCode } });
   if (!device) return { ok: false, reason: "invalid" as const };
 
-  if (!["AVAILABLE", "UNASSIGNED", "RESERVED"].includes(device.status)) {
-    return { ok: false, reason: "unavailable" as const };
+  if (!canActivateStatus(device.status)) {
+    const activationState = getDeviceActivationState(device.status);
+    return { ok: false, reason: activationState === "ACTIVE" ? ("activated" as const) : ("unavailable" as const) };
   }
 
   if (device.activationBlockedUntil && device.activationBlockedUntil > new Date()) {

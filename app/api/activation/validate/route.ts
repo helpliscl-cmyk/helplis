@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   const result = await validateActivationPublicCode(publicCode);
 
   return NextResponse.json(result, {
-    status: result.ok ? 200 : result.reason === "unavailable" ? 409 : 404,
+    status: result.ok ? 200 : result.reason === "unavailable" || result.reason === "activated" ? 409 : 404,
     headers: { "cache-control": "no-store" },
   });
 }
