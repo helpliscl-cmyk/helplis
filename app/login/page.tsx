@@ -4,7 +4,6 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
-import { loginAction } from "@/features/auth/actions";
 
 export default async function LoginPage({
   searchParams,
@@ -28,7 +27,7 @@ export default async function LoginPage({
               Credenciales inválidas o usuario no activo.
             </p>
           ) : null}
-          <form action={loginAction} className="grid gap-4">
+          <form action="/auth/login" method="post" className="grid gap-4">
             <input type="hidden" name="next" value={params.next ?? ""} />
             <Field label="Correo">
               <Input name="email" type="email" autoComplete="email" required defaultValue="admin@demo.helplis.cl" />
