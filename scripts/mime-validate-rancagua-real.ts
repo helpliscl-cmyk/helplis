@@ -449,7 +449,7 @@ async function main() {
     );
     console.log(`Informe: ${join(".", report.reportPath.replace(process.cwd(), ""))}`);
     console.log(
-      `Resumen: correo ${report.totals.withEmail}/${report.totals.total}, telefono ${report.totals.withPhone}/${report.totals.total}, web ${report.totals.withWebsite}/${report.totals.total}.`,
+      `Resumen: correo ${report.totals.withEmail}/${report.totals.total}, telefono ${report.totals.withPhone}/${report.totals.total}, web ${report.totals.withWebsite}/${report.totals.total}, sostenedor ${report.totals.withHolder}/${report.totals.total}.`,
     );
     return;
   }
@@ -517,7 +517,7 @@ async function main() {
   const report = await buildReport(job.id, lockProbe, replayCheck);
   console.log(`Informe: ${join(".", report.reportPath.replace(process.cwd(), ""))}`);
   console.log(
-    `Resumen: correo ${report.totals.withEmail}/${report.totals.total}, telefono ${report.totals.withPhone}/${report.totals.total}, web ${report.totals.withWebsite}/${report.totals.total}.`,
+    `Resumen: correo ${report.totals.withEmail}/${report.totals.total}, telefono ${report.totals.withPhone}/${report.totals.total}, web ${report.totals.withWebsite}/${report.totals.total}, sostenedor ${report.totals.withHolder}/${report.totals.total}.`,
   );
 }
 
