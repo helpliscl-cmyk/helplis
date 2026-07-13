@@ -176,3 +176,15 @@ Cierre productivo local:
 - `/dashboard/devices/[publicCode]` administra con permisos y permite asignar a otra persona.
 - Reasignacion conserva publicCode, QR, UID NFC, escaneos y auditoria; registra usuario, fecha y motivo opcional.
 - Admin/soporte puede suspender, reactivar o deshabilitar desde `/admin/devices` con audit log.
+
+# Permanent URL, photo storage and SAMPLE preview update - 2026-07-13
+
+- URL fisica definitiva: `https://helplis.cl/p/[publicCode]`.
+- Nuevas entradas y migraciones mantienen `publicUrl === qrContent === nfcContent`.
+- Fotos nuevas se procesan server-side a WebP, maximo 1024 x 1024, sin EXIF persistido.
+- Fotos se guardan como path privado `users/[userId]/profiles/[profileId]/[randomId].webp`.
+- La ficha publica usa `/api/public/profile-photo/[profileId]` y valida `showPhoto` + pulsera activa.
+- Dashboard permite reemplazar y eliminar foto con auditoria.
+- `/admin/production/sample-preview` genera preview SAMPLE de 5 unidades sin persistir.
+- La confirmacion manual persiste `SAMPLE-HELPLIS-001` con activationCode protegido y sin enviarlo al proveedor.
+- Export preview incluye Excel, QR PNG/SVG y plantilla de retorno sin activationCode.

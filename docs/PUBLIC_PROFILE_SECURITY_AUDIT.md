@@ -2,24 +2,40 @@
 
 Fecha: 2026-07-13
 
-Estado: implementacion base lista, pendiente de hardening externo con proveedor de rate limit en produccion.
-
-Controles implementados:
+## Controles implementados
 
 - Proyeccion publica server-side.
-- Telefonos ocultos por defecto como texto.
-- Telefonos disponibles solo tras accion explicita; no se serializan en el HTML inicial cuando `showPhoneNumbers` esta apagado.
-- Campos medicos granulares.
-- Mascotas/objetos no exponen campos medicos.
-- Ubicacion solo por click.
-- Rechazo de ubicacion registrado sin insistir.
+- Telefonos ocultos por defecto en HTML.
+- Llamada y WhatsApp se resuelven por endpoint seguro.
+- Ubicacion solo por click con consentimiento.
 - Reporte encontrado sin datos obligatorios.
-- Sanitizacion basica de texto visible y payloads.
-- Rate limit local en scans y acciones publicas.
-- Errores neutrales en RPC Supabase.
+- Errores neutros para codigos invalidos.
+- `SUSPENDED` y `DISABLED` no muestran datos personales.
+- `ACTIVE` registra escaneo.
+- `UNACTIVATED` ofrece activacion sin mostrar perfil.
+- `activationCode` nunca aparece en QR/NFC, URL fisica ni export proveedor.
 
-Riesgos residuales:
+## Fotos
 
-- El rate limit en memoria no comparte estado entre instancias Vercel.
-- Las notificaciones son locales/simuladas hasta conectar proveedor real.
-- El upload de fotos requiere capa de URLs firmadas en producto.
+- La ficha publica no recibe rutas privadas.
+- Si `showPhoto=false`, `photoUrl` publico es `null` y el HTML no contiene endpoint de foto.
+- Si `showPhoto=true`, se usa `/api/public/profile-photo/[profileId]`.
+- El endpoint solo entrega bytes si hay pulsera activa asociada.
+- Cache deshabilitada para evitar exposicion prolongada tras cambios de privacidad.
+- No se exponen bucket, service role ni paths completos.
+
+## Riesgos revisados
+
+- MIME spoofing: servidor valida MIME y contenido real con `sharp`.
+- SVG/GIF/HTML: rechazados.
+- Path traversal: paths generados por servidor y validados contra raiz local.
+- Fotos enormes: limite 5 MB y `limitInputPixels`.
+- EXIF: salida WebP sin metadata preservada.
+- IDOR por profileId: endpoint exige perfil publico, showPhoto y dispositivo activo.
+- Usuarios ajenos: dashboard valida owner para reemplazo/eliminacion.
+- URLs antiguas: endpoint no-store y version por `photoUpdatedAt`.
+
+## Riesgos residuales
+
+- Rate limit publico sigue en memoria; conviene mover a proveedor distribuido.
+- Supabase runtime real requiere variables en Vercel y verificacion de policies con usuarios reales.

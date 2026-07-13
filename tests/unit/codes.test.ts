@@ -34,6 +34,8 @@ describe("códigos públicos y URL", () => {
 
   it("rechaza rutas no públicas", () => {
     expect(isAllowedPublicUrl("https://helplis.cl/admin")).toBe(false);
+    expect(isAllowedPublicUrl("https://helplis.cl/activate/ABC123")).toBe(false);
+    expect(isAllowedPublicUrl("https://helplis.cl/p/ABC123/extra")).toBe(false);
   });
 
   it("genera código único si el primero no existe", async () => {

@@ -68,4 +68,10 @@ describe("people-first activation schema", () => {
 
     expect(activationInputSchema.safeParse(input).success).toBe(true);
   });
+
+  it("accepts photo payload size compatible with a 5 MB original image", () => {
+    const photoDataUrl = `data:image/png;base64,${"A".repeat(1_500_000)}`;
+
+    expect(activationInputSchema.safeParse({ ...baseInput, photoDataUrl }).success).toBe(true);
+  });
 });

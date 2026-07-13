@@ -6,6 +6,8 @@ Principios:
 
 - El responsable administra sus perfiles.
 - Las fotos quedan protegidas por owner en `profile-photos`.
+- La ruta esperada es `users/[auth.uid]/profiles/[profileId]/[random].webp`.
+- La lectura publica de fotos pasa por endpoint servidor, no por policies anon.
 - La ficha publica devuelve solo campos permitidos.
 - `criticalInformation` solo se entrega si `show_critical_information = true`.
 - Los telefonos no aparecen en HTML por defecto.

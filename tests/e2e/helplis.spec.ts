@@ -144,7 +144,7 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.getByRole("button", { name: "Continuar" }).click();
 
   await page.locator('input[type="file"]').first().setInputFiles("public/brand/optimized/helplis-social-icon.png");
-  await expect(page.getByText("Foto cargada")).toBeVisible();
+  await expect(page.getByText("Foto lista para subir")).toBeVisible();
   await page.locator('input[name="displayName"]').fill("Perfil E2E");
   await page.getByRole("button", { name: "Continuar" }).click();
 
@@ -175,18 +175,28 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await context.setGeolocation({ latitude: -33.45, longitude: -70.66 });
   await page.goto("/p/HLP009");
   await expect(page.getByRole("heading", { name: "Perfil E2E" })).toBeVisible();
+  await expect(page.locator("article header img")).toHaveAttribute("src", /\/api\/public\/profile-photo\//);
   expect(await page.content()).not.toContain("+56912345678");
   expect(await page.content()).not.toContain("Puede desorientarse");
   await page.getByRole("button", { name: "Compartir mi ubicacion con el responsable" }).click();
   await expect(page.getByText("Ubicacion compartida")).toBeVisible();
 
   await page.goto("/dashboard/privacy");
+  await page.getByLabel("Mostrar foto").uncheck();
   await page.getByLabel("Mostrar informacion critica").check();
   await page.getByRole("button", { name: "Guardar privacidad" }).click();
   await expect(page).toHaveURL(/saved=1/);
   await page.goto("/p/HLP009");
+  await expect(page.locator("article header img")).toHaveCount(0);
+  expect(await page.content()).not.toContain("/api/public/profile-photo/");
   await expect(page.getByText("Informacion importante")).toBeVisible();
   await expect(page.getByText("Puede desorientarse")).toBeVisible();
+  await page.goto("/dashboard/privacy");
+  await page.getByLabel("Mostrar foto").check();
+  await page.getByRole("button", { name: "Guardar privacidad" }).click();
+  await expect(page).toHaveURL(/saved=1/);
+  await page.goto("/p/HLP009");
+  await expect(page.locator("article header img")).toHaveAttribute("src", /\/api\/public\/profile-photo\//);
 
   await page.goto("/dashboard/devices/HLP009");
   await expect(page.getByRole("heading", { name: "Administrar HelPlis" })).toBeVisible();
@@ -232,6 +242,15 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.getByLabel("Contraseña").fill("HelPlisDemo123!");
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page.getByRole("heading", { name: "Panel administrador" })).toBeVisible();
+  await page.goto("/admin/production/sample-preview");
+  await expect(page.getByRole("heading", { name: "Preview SAMPLE real" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "SAMPLE-HELPLIS-001" })).toBeVisible();
+  await expect(page.locator("tbody tr")).toHaveCount(5);
+  await expect(page.locator("tbody tr").first()).toContainText("https://helplis.cl/p/");
+  await expect(page.getByRole("button", { name: "Confirmar lote real" })).toBeVisible();
+  await page.getByRole("link", { name: "Cancelar" }).click();
+  await expect(page.getByRole("heading", { name: "Produccion" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "SAMPLE-HELPLIS-001" })).toHaveCount(0);
   await page.goto("/admin/devices");
   await page.locator("section").filter({ hasText: "HLP009" }).first().getByRole("button", { name: "Suspender" }).click();
   await expect(page).toHaveURL(/status=updated/);

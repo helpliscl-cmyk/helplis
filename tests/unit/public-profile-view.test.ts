@@ -11,6 +11,12 @@ function profile(overrides: Partial<Profile> = {}, contacts: Partial<EmergencyCo
     legalName: "Mateo Demo Full",
     alias: "Mati",
     photoUrl: "https://example.test/mati.webp",
+    photoStoragePath: null,
+    photoMimeType: null,
+    photoWidth: null,
+    photoHeight: null,
+    photoSizeBytes: null,
+    photoUpdatedAt: null,
     headline: "Nino con HelPlis",
     helpMessage: "Contacta a mi adulto responsable.",
     description: "Descripcion autorizada.",
@@ -201,6 +207,20 @@ describe("buildPublicProfileView", () => {
     expect(view.contacts[0].name).toBeNull();
     expect(view.contacts[0].callEnabled).toBe(false);
     expect(view.contacts[0].whatsappEnabled).toBe(false);
+  });
+
+  it("uses controlled photo endpoint only for stored authorized photos", () => {
+    const hiddenLegacy = buildPublicProfileView(profile({ showPhoto: true, photoStoragePath: null }));
+    const visibleStored = buildPublicProfileView(
+      profile({
+        showPhoto: true,
+        photoStoragePath: "users/user_1/profiles/profile_1/random.webp",
+        photoUpdatedAt: new Date("2026-07-13T12:00:00.000Z"),
+      }),
+    );
+
+    expect(hiddenLegacy.photoUrl).toBeNull();
+    expect(visibleStored.photoUrl).toBe("/api/public/profile-photo/profile_1?v=1783944000000");
   });
 
   it("exposes critical information only when the single privacy flag is enabled", () => {
