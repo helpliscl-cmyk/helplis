@@ -54,3 +54,4 @@ prisma/schema.production.prisma
 
 # generated operational artifacts
 /data/production
+/data/profile-photos
