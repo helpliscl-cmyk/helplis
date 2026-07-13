@@ -37,7 +37,12 @@ export default async function AdminProductionPage() {
             Lotes operativos, codigos, proveedor, UID, verificacion e inventario inicial.
           </p>
         </div>
-        <ButtonLink href="/admin/production/new">Nuevo lote</ButtonLink>
+        <div className="flex flex-wrap gap-2">
+          <ButtonLink href="/admin/production/sample-preview" variant="secondary">
+            Preview SAMPLE
+          </ButtonLink>
+          <ButtonLink href="/admin/production/new">Nuevo lote</ButtonLink>
+        </div>
       </header>
 
       <Card className="border-amber-200 bg-amber-50">

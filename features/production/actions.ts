@@ -11,6 +11,7 @@ import {
 } from "@/server/operations/manufacturer-export";
 import { generateProductionCodesForBatch } from "@/server/operations/production-codes";
 import { recordPhysicalVerification } from "@/server/operations/physical-verification";
+import { confirmSamplePreviewBatch } from "@/server/operations/sample-batch-preview";
 import { importSupplierUidReturn } from "@/server/operations/supplier-uid-import";
 
 const adminRoles = ["ADMIN", "SUPER_ADMIN", "SUPPORT"] as const;
@@ -147,6 +148,20 @@ export async function createSampleProductionBatchAction(formData: FormData) {
   formData.set("productType", text(formData, "productType", "WRISTBAND"));
   formData.set("domain", text(formData, "domain", "https://helplis.cl"));
   return createProductionBatchAction(formData);
+}
+
+export async function confirmSamplePreviewBatchAction(formData: FormData) {
+  const user = await requireRole([...adminRoles]);
+  const encodedUnits = text(formData, "encodedUnits");
+  if (!encodedUnits) redirect("/admin/production/sample-preview?error=preview");
+
+  try {
+    const batch = await confirmSamplePreviewBatch({ encodedUnits, actorUserId: user.id });
+    revalidatePath("/admin/production");
+    redirect(`/admin/production/${batch.id}?sample=confirmed`);
+  } catch {
+    redirect("/admin/production/sample-preview?error=confirm");
+  }
 }
 
 export async function generateManufacturerExportAction(formData: FormData) {
