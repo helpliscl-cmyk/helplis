@@ -24,3 +24,41 @@ Full package files:
 - `qr-svg/`
 
 CSV/XLSX values are neutralized against spreadsheet formula injection.
+
+## SAMPLE preview
+
+Antes de confirmar `SAMPLE-HELPLIS-001`, `/admin/production/sample-preview` puede generar en memoria:
+
+- Excel `manufacturer.xlsx`.
+- QR PNG ZIP.
+- QR SVG ZIP.
+- Plantilla CSV de retorno.
+
+Columnas minimas para Emilia:
+
+- `Wristband Reference`
+- `Public Code`
+- `Public URL`
+- `QR Content`
+- `NFC Content`
+- `QR Filename`
+- `Batch Reference`
+
+Instrucciones en ingles:
+
+- five unique wristbands;
+- each QR must use the corresponding unique URL;
+- each NTAG213 must contain that same URL;
+- one-to-one matching;
+- return UID;
+- continuous QR/NFC test;
+- do not alter URLs.
+
+Nunca incluir:
+
+- activationCode;
+- activationCodeHash;
+- ownerId;
+- UID inventado;
+- datos personales;
+- contactos.
