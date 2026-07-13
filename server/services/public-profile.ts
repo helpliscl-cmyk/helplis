@@ -136,6 +136,7 @@ export async function recordPublicContactAction({
   latitude,
   longitude,
   accuracy,
+  locationPermissionStatus,
   ip,
   userAgent,
 }: {
@@ -144,6 +145,7 @@ export async function recordPublicContactAction({
   latitude?: number;
   longitude?: number;
   accuracy?: number;
+  locationPermissionStatus?: "GRANTED" | "DENIED" | "UNAVAILABLE";
   ip?: string | null;
   userAgent?: string | null;
 }) {
@@ -164,6 +166,37 @@ export async function recordPublicContactAction({
         locationSharedAt: new Date(),
       },
     });
+
+    await prisma.locationShare.create({
+      data: {
+        deviceId: scan.deviceId,
+        profileId: scan.profileId,
+        scanEventId: scan.id,
+        latitude,
+        longitude,
+        accuracy,
+        consented: true,
+        permissionStatus: locationPermissionStatus ?? "GRANTED",
+        result: "RECORDED",
+        ipHash: hashIpAddress(ip),
+        userAgent,
+      },
+    });
+  }
+
+  if (action === "LOCATION_REJECTED") {
+    await prisma.locationShare.create({
+      data: {
+        deviceId: scan.deviceId,
+        profileId: scan.profileId,
+        scanEventId: scan.id,
+        consented: false,
+        permissionStatus: locationPermissionStatus ?? "DENIED",
+        result: "REJECTED",
+        ipHash: hashIpAddress(ip),
+        userAgent,
+      },
+    });
   }
 
   await prisma.contactAction.create({
@@ -172,7 +205,7 @@ export async function recordPublicContactAction({
       profileId: scan.profileId,
       scanEventId: scan.id,
       action,
-      metadata: JSON.stringify({ latitude, longitude, accuracy }),
+      metadata: JSON.stringify({ latitude, longitude, accuracy, locationPermissionStatus }),
       ipHash: hashIpAddress(ip),
       userAgent,
     },
@@ -181,6 +214,8 @@ export async function recordPublicContactAction({
   const eventType =
     action === "LOCATION_SHARED"
       ? "LOCATION_SHARED"
+      : action === "LOCATION_REJECTED"
+        ? "CONTACT_BUTTON_CLICKED"
       : action === "CALL_CLICKED"
         ? "CALL_BUTTON_CLICKED"
         : action === "WHATSAPP_CLICKED"
@@ -203,4 +238,92 @@ export async function recordPublicContactAction({
       locationShared: action === "LOCATION_SHARED",
     },
   });
+}
+
+export async function recordFoundReport({
+  scanId,
+  reporterName,
+  reporterPhone,
+  message,
+  latitude,
+  longitude,
+  accuracy,
+  consentedLocation = false,
+  ip,
+  userAgent,
+}: {
+  scanId: string;
+  reporterName?: string | null;
+  reporterPhone?: string | null;
+  message?: string | null;
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
+  consentedLocation?: boolean;
+  ip?: string | null;
+  userAgent?: string | null;
+}) {
+  const scan = await prisma.scanEvent.findUnique({
+    where: { id: scanId },
+    include: { device: true },
+  });
+  if (!scan) throw new Error("Scan no encontrado.");
+
+  const cleanName = sanitizeOptional(reporterName, 120);
+  const cleanPhone = sanitizeOptional(reporterPhone, 32);
+  const cleanMessage = sanitizeOptional(message, 700);
+
+  const foundReport = await prisma.foundReport.create({
+    data: {
+      deviceId: scan.deviceId,
+      profileId: scan.profileId,
+      scanEventId: scan.id,
+      reporterName: cleanName,
+      reporterPhone: cleanPhone,
+      message: cleanMessage,
+      latitude,
+      longitude,
+      accuracy,
+      consentedLocation,
+      status: "RECEIVED",
+      ipHash: hashIpAddress(ip),
+      userAgent,
+    },
+  });
+
+  await prisma.contactAction.create({
+    data: {
+      deviceId: scan.deviceId,
+      profileId: scan.profileId,
+      scanEventId: scan.id,
+      action: "FOUND_REPORTED",
+      metadata: JSON.stringify({ foundReportId: foundReport.id, hasReporterPhone: Boolean(cleanPhone) }),
+      ipHash: hashIpAddress(ip),
+      userAgent,
+    },
+  });
+
+  await notificationProvider.sendLocal({
+    userId: scan.device.ownerId,
+    deviceId: scan.deviceId,
+    profileId: scan.profileId,
+    scanEventId: scan.id,
+    eventType: "MARKED_AS_FOUND",
+    payload: {
+      publicCode: scan.device.publicCode,
+      foundReportId: foundReport.id,
+      hasMessage: Boolean(cleanMessage),
+      locationShared: consentedLocation,
+    },
+  });
+
+  return foundReport;
+}
+
+function sanitizeOptional(value: string | null | undefined, maxLength: number) {
+  if (!value) return null;
+  const trimmed = value.trim().replace(/\s+/g, " ");
+  if (!trimmed) return null;
+  if (/<[^>]*>|javascript:|data:text\/html|vbscript:/i.test(trimmed)) return null;
+  return trimmed.slice(0, maxLength);
 }

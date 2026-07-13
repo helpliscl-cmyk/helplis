@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, LocateFixed, MapPinCheck, MessageCircle, Phone, Siren } from "lucide-react";
+import { FormEvent, useState } from "react";
+import { Copy, LocateFixed, MapPinCheck, MessageCircle, Phone, Siren, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input, Textarea } from "@/components/ui/field";
 
 type Contact = {
   name: string | null;
@@ -10,6 +11,12 @@ type Contact = {
   phoneForAction: string | null;
   whatsappEnabled: boolean;
   callEnabled: boolean;
+};
+
+type FoundLocation = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
 };
 
 async function record(scanId: string, action: string) {
@@ -34,17 +41,20 @@ export function PublicActions({
   allowFoundReport: boolean;
 }) {
   const [status, setStatus] = useState<string | null>(null);
+  const [showFoundForm, setShowFoundForm] = useState(false);
+  const [foundLocation, setFoundLocation] = useState<FoundLocation | null>(null);
   const firstCallable = contacts.find((contact) => contact.phoneForAction && contact.callEnabled);
   const firstWhatsapp = contacts.find((contact) => contact.phoneForAction && contact.whatsappEnabled);
 
   async function shareLocation() {
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setStatus("Sin conexión. Intenta compartir la ubicación cuando recuperes internet.");
+      setStatus("Sin conexion. Intenta compartir la ubicacion cuando recuperes internet.");
       return;
     }
-    setStatus("Tu ubicación solo se enviará si aceptas compartirla.");
+    setStatus("Tu ubicacion solo se enviara si aceptas compartirla.");
     if (!navigator.geolocation) {
-      setStatus("Este navegador no permite compartir ubicación.");
+      await sendLocationPreference("UNAVAILABLE");
+      setStatus("Este navegador no permite compartir ubicacion.");
       return;
     }
 
@@ -55,14 +65,46 @@ export function PublicActions({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             scanId,
+            permissionStatus: "GRANTED",
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             accuracy: position.coords.accuracy,
           }),
         });
-        setStatus(response.ok ? "Ubicación compartida con el responsable." : "No se pudo compartir la ubicación.");
+        setStatus(response.ok ? "Ubicacion compartida con el responsable." : "No se pudo compartir la ubicacion.");
       },
-      () => setStatus("No se compartió la ubicación."),
+      async () => {
+        await sendLocationPreference("DENIED");
+        setStatus("No se compartio la ubicacion. Puedes usar los contactos igualmente.");
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
+    );
+  }
+
+  async function sendLocationPreference(permissionStatus: "DENIED" | "UNAVAILABLE") {
+    await fetch("/api/public/location", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ scanId, permissionStatus }),
+    }).catch(() => undefined);
+  }
+
+  async function addFoundLocation() {
+    setStatus("Tu ubicacion se agregara al aviso solo si aceptas el permiso del navegador.");
+    if (!navigator.geolocation) {
+      setStatus("Este navegador no permite agregar ubicacion.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFoundLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
+        setStatus("Ubicacion agregada al aviso encontrado.");
+      },
+      () => setStatus("No se agrego ubicacion al aviso encontrado."),
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
     );
   }
@@ -73,14 +115,32 @@ export function PublicActions({
     setStatus("Enlace copiado.");
   }
 
-  async function markFound() {
-    await record(scanId, "FOUND_REPORTED");
-    setStatus("Aviso registrado. El responsable verá este evento localmente.");
+  async function submitFoundReport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const response = await fetch("/api/public/found-report", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        scanId,
+        reporterName: form.get("reporterName") || undefined,
+        reporterPhone: form.get("reporterPhone") || undefined,
+        message: form.get("message") || undefined,
+        latitude: foundLocation?.latitude,
+        longitude: foundLocation?.longitude,
+        accuracy: foundLocation?.accuracy,
+        consentedLocation: Boolean(foundLocation),
+      }),
+    });
+    setStatus(response.ok ? "Aviso enviado al responsable." : "No se pudo enviar el aviso.");
+    if (response.ok) setShowFoundForm(false);
   }
 
   async function reportEmergency() {
     await record(scanId, "EMERGENCY_REPORTED");
-    setStatus("Emergencia registrada localmente. Si hay riesgo inmediato, contacta servicios de emergencia.");
+    setStatus(
+      "HelPlis no reemplaza servicios oficiales ni garantiza respuesta inmediata. Si hay riesgo inmediato, contacta emergencias.",
+    );
   }
 
   return (
@@ -98,7 +158,7 @@ export function PublicActions({
       {firstWhatsapp?.phoneForAction ? (
         <a
           href={`https://wa.me/${firstWhatsapp.phoneForAction.replace(/\D/g, "")}?text=${encodeURIComponent(
-            `Hola, escaneé el código ${publicCode} en HelPlis.`,
+            `Hola, escanee el codigo ${publicCode} en HelPlis.`,
           )}`}
           onClick={() => void record(scanId, "WHATSAPP_CLICKED")}
           className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[var(--brand-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--brand-text)]"
@@ -110,14 +170,28 @@ export function PublicActions({
       {showLocationButton ? (
         <Button type="button" variant="accent" onClick={shareLocation}>
           <LocateFixed aria-hidden className="h-4 w-4" />
-          Compartir mi ubicación con el responsable
+          Compartir mi ubicacion con el responsable
         </Button>
       ) : null}
       {allowFoundReport ? (
-        <Button type="button" variant="secondary" onClick={markFound}>
-          <MapPinCheck aria-hidden className="h-4 w-4" />
+        <Button type="button" variant="secondary" onClick={() => setShowFoundForm((value) => !value)}>
+          {showFoundForm ? <X aria-hidden className="h-4 w-4" /> : <MapPinCheck aria-hidden className="h-4 w-4" />}
           Reportar encontrado
         </Button>
+      ) : null}
+      {showFoundForm ? (
+        <form onSubmit={submitFoundReport} className="grid gap-3 rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] p-3">
+          <Input name="reporterName" placeholder="Tu nombre (opcional)" />
+          <Input name="reporterPhone" type="tel" placeholder="Tu telefono (opcional)" />
+          <Textarea name="message" placeholder="Mensaje para el responsable (opcional)" />
+          <Button type="button" variant="secondary" onClick={addFoundLocation}>
+            <LocateFixed aria-hidden className="h-4 w-4" />
+            {foundLocation ? "Ubicacion agregada" : "Agregar mi ubicacion"}
+          </Button>
+          <Button type="submit" variant="accent">
+            Enviar aviso
+          </Button>
+        </form>
       ) : null}
       <Button type="button" variant="secondary" onClick={copyLink}>
         <Copy aria-hidden className="h-4 w-4" />

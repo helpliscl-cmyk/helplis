@@ -10,6 +10,7 @@ const schema = z.object({
     "WHATSAPP_CLICKED",
     "MESSAGE_CLICKED",
     "LOCATION_SHARED",
+    "LOCATION_REJECTED",
     "FOUND_REPORTED",
     "EMERGENCY_REPORTED",
     "PROFILE_VIEWED",
