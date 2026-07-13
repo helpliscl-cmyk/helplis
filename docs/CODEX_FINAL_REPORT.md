@@ -45,3 +45,30 @@ During development, lint and typecheck passed repeatedly after each module. Fina
 - Real file uploads and evidence-photo storage.
 - Real 500-unit batch approval.
 - Supplier instructions must be manually reviewed before sending.
+# HelPlis Public Profile/Supabase Update - 2026-07-13
+
+Trabajo agregado:
+
+- Benchmark de ficha de emergencia documentado.
+- Modelo de perfil ampliado para personas, mascotas y objetos.
+- Privacidad granular y proyeccion publica server-side.
+- Ficha `/p/[publicCode]` redisenada.
+- Activacion asistida con preview y hasta tres contactos.
+- Ubicacion voluntaria con rechazo registrado.
+- Reporte "Lo encontre" con datos opcionales.
+- Migraciones Supabase de perfiles, operaciones, RLS, endpoints y storage.
+- Tests unitarios de privacidad de ficha publica.
+
+Validaciones parciales:
+
+- `npm run db:reset`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- tests/unit/public-profile-view.test.ts`
+- Verificacion local en `http://localhost:3457/p/HLP001`, `http://localhost:3457/p/HLP005` y `http://localhost:3457/activate/HLP009`.
+
+Pendiente para cierre productivo:
+
+- Aplicar migraciones al Supabase remoto confirmado.
+- Ejecutar suite completa y build final.
+- Desplegar Vercel y verificar produccion.
