@@ -42,7 +42,7 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
 
   await page.goto("/p/HLP010");
   await expect(page.getByRole("heading", { name: "Esta pulsera todavia no ha sido activada." })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Iniciar activacion" })).toHaveAttribute("href", "/activate/HLP010");
+  await expect(page.getByRole("link", { name: "Activar esta HelPlis" })).toHaveAttribute("href", "/activate/HLP010");
 
   await page.goto("/p/HLP001");
   await expect(page.getByRole("heading", { name: "Mati" })).toBeVisible();

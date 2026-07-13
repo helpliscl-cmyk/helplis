@@ -44,7 +44,7 @@ export default async function PublicProfilePage({
         title="Esta pulsera todavia no ha sido activada."
         description="El codigo publico no basta para apropiarse de un dispositivo. Para activarlo se requiere el codigo secreto incluido en el empaque."
         actionHref={`/activate/${result.publicCode}`}
-        actionLabel="Iniciar activacion"
+        actionLabel="Activar esta HelPlis"
       />
     );
   }
