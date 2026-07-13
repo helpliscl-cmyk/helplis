@@ -7,7 +7,7 @@ export default async function AdminPage() {
   const items = [
     { label: "Lotes", value: metrics.batches, Icon: Package },
     { label: "Dispositivos", value: metrics.devices, Icon: QrCode },
-    { label: "Activación", value: `${metrics.activationRate}%`, Icon: Activity },
+    { label: "Activacion", value: `${metrics.activationRate}%`, Icon: Activity },
     { label: "Perfiles", value: metrics.profiles, Icon: Users },
     { label: "Leads", value: metrics.purchaseIntents, Icon: ShoppingBag },
     { label: "Organizaciones", value: metrics.organizations, Icon: Building2 },
@@ -18,7 +18,7 @@ export default async function AdminPage() {
     <div className="grid gap-6">
       <header>
         <h1 className="text-2xl font-semibold">Panel administrador</h1>
-        <p className="mt-1 text-sm text-neutral-600">Métricas locales desde SQLite.</p>
+        <p className="mt-1 text-sm text-neutral-600">Metricas operativas desde la base de datos de produccion.</p>
       </header>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {items.map(({ label, value, Icon }) => (
