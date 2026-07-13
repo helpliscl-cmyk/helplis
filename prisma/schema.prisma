@@ -84,6 +84,9 @@ enum ActivationStatus {
 
 enum BatchStatus {
   DRAFT
+  AWAITING_QUOTE
+  QUOTED
+  APPROVED
   CODES_GENERATED
   FILES_READY
   GENERATED
@@ -95,11 +98,15 @@ enum BatchStatus {
   IN_PRODUCTION
   MASS_PRODUCTION
   MASS_PRODUCTION_COMPLETE
+  REMOTE_VALIDATION
+  REMOTE_APPROVED
   SHIPPED
   PARTIALLY_RECEIVED
   RECEIVED
+  PHYSICAL_VERIFICATION
   VERIFICATION_IN_PROGRESS
   VERIFIED
+  REJECTED
   CANCELLED
 }
 
@@ -508,6 +515,12 @@ model Profile {
   legalName               String?
   alias                   String?
   photoUrl                String?
+  photoStoragePath        String?
+  photoMimeType           String?
+  photoWidth              Int?
+  photoHeight             Int?
+  photoSizeBytes          Int?
+  photoUpdatedAt          DateTime?
   headline                String?
   helpMessage             String?
   description             String?

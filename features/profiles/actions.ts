@@ -8,6 +8,12 @@ import { prisma } from "@/server/db/client";
 import { notificationProvider } from "@/server/notifications/provider";
 import { getDeviceWithManagePermission } from "@/server/services/device-access";
 import { getDeviceActivationState } from "@/server/services/device-rules";
+import {
+  deletePrivateProfilePhoto,
+  processProfilePhotoBuffer,
+  ProfilePhotoError,
+  storeProcessedProfilePhoto,
+} from "@/server/services/profile-photo-storage";
 
 const profileSchema = z.object({
   type: z.enum([
@@ -92,6 +98,119 @@ export async function createContactAction(formData: FormData) {
     },
   });
   redirect("/dashboard/contacts?created=1");
+}
+
+export async function updateProfilePhotoAction(formData: FormData) {
+  const user = await requireUser();
+  const profileId = String(formData.get("profileId") ?? "");
+  const uploaded = formData.get("photo");
+  if (!(uploaded instanceof File) || uploaded.size <= 0) redirect("/dashboard/profiles?error=photo");
+
+  const profile = await prisma.profile.findFirst({
+    where: { id: profileId, ownerId: user.id, deletedAt: null },
+    select: {
+      id: true,
+      ownerId: true,
+      photoStoragePath: true,
+      photoMimeType: true,
+      photoWidth: true,
+      photoHeight: true,
+      photoSizeBytes: true,
+    },
+  });
+  if (!profile?.ownerId) redirect("/dashboard/profiles?error=forbidden");
+
+  const previousPath = profile.photoStoragePath;
+  const processedPhoto = await processProfilePhotoBuffer(uploaded.type, Buffer.from(await uploaded.arrayBuffer())).catch(
+    (error) => {
+      if (error instanceof ProfilePhotoError) return null;
+      throw error;
+    },
+  );
+  if (!processedPhoto) redirect("/dashboard/profiles?error=photo");
+
+  const storedPhoto = await storeProcessedProfilePhoto({
+    userId: profile.ownerId,
+    profileId: profile.id,
+    photo: processedPhoto,
+  });
+
+  await prisma.profile.update({
+    where: { id: profile.id },
+    data: {
+      photoUrl: null,
+      photoStoragePath: storedPhoto.storagePath,
+      photoMimeType: storedPhoto.mimeType,
+      photoWidth: storedPhoto.width,
+      photoHeight: storedPhoto.height,
+      photoSizeBytes: storedPhoto.sizeBytes,
+      photoUpdatedAt: storedPhoto.updatedAt,
+      showPhoto: true,
+    },
+  });
+  await deletePrivateProfilePhoto(previousPath);
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: user.id,
+      action: previousPath ? "PROFILE_PHOTO_REPLACED" : "PROFILE_PHOTO_UPLOADED",
+      entityType: "Profile",
+      entityId: profile.id,
+      previousData: JSON.stringify({
+        photoStoragePath: previousPath,
+        photoMimeType: profile.photoMimeType,
+        photoWidth: profile.photoWidth,
+        photoHeight: profile.photoHeight,
+        photoSizeBytes: profile.photoSizeBytes,
+      }),
+      newData: JSON.stringify({
+        photoStoragePath: storedPhoto.storagePath,
+        photoMimeType: storedPhoto.mimeType,
+        photoWidth: storedPhoto.width,
+        photoHeight: storedPhoto.height,
+        photoSizeBytes: storedPhoto.sizeBytes,
+        photoUpdatedAt: storedPhoto.updatedAt.toISOString(),
+      }),
+    },
+  });
+
+  redirect("/dashboard/profiles?photo=updated");
+}
+
+export async function deleteProfilePhotoAction(formData: FormData) {
+  const user = await requireUser();
+  const profileId = String(formData.get("profileId") ?? "");
+  const profile = await prisma.profile.findFirst({
+    where: { id: profileId, ownerId: user.id, deletedAt: null },
+    select: { id: true, photoStoragePath: true },
+  });
+  if (!profile) redirect("/dashboard/profiles?error=forbidden");
+
+  await prisma.profile.update({
+    where: { id: profile.id },
+    data: {
+      photoUrl: null,
+      photoStoragePath: null,
+      photoMimeType: null,
+      photoWidth: null,
+      photoHeight: null,
+      photoSizeBytes: null,
+      photoUpdatedAt: null,
+      showPhoto: false,
+    },
+  });
+  await deletePrivateProfilePhoto(profile.photoStoragePath);
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: user.id,
+      action: "PROFILE_PHOTO_DELETED",
+      entityType: "Profile",
+      entityId: profile.id,
+      previousData: JSON.stringify({ photoStoragePath: profile.photoStoragePath }),
+      newData: JSON.stringify({ photoStoragePath: null, showPhoto: false }),
+    },
+  });
+
+  redirect("/dashboard/profiles?photo=deleted");
 }
 
 export async function updatePrivacyAction(formData: FormData) {

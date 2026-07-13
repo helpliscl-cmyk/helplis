@@ -1,4 +1,5 @@
 import type { EmergencyContact, Profile, ProfileType } from "@prisma/client";
+import { buildProfilePhotoPublicUrl } from "@/server/services/profile-photo-storage";
 
 const PERSON_PROFILE_TYPES = new Set<ProfileType>([
   "PERSON",
@@ -121,7 +122,7 @@ export function buildPublicProfileView(
     typeLabel: PROFILE_TYPE_LABELS[publicType],
     displayName: visibleName(profile),
     alias: cleanText(profile.alias),
-    photoUrl: profile.showPhoto ? cleanUrl(profile.photoUrl) : null,
+    photoUrl: profile.showPhoto && profile.photoStoragePath ? buildProfilePhotoPublicUrl(profile.id, profile.photoUpdatedAt) : null,
     headline: cleanText(profile.headline),
     helpMessage: cleanText(profile.helpMessage) ?? HELP_MESSAGE_TEMPLATES[publicType] ?? HELP_MESSAGE_TEMPLATES.OTHER!,
     description: cleanText(profile.description),
@@ -246,11 +247,4 @@ function cleanText(value: string | null | undefined) {
   const withoutTags = trimmed.replace(/<[^>]*>/g, "");
   if (/javascript:|data:text\/html|vbscript:/i.test(withoutTags)) return null;
   return withoutTags.slice(0, 700);
-}
-
-function cleanUrl(value: string | null | undefined) {
-  const cleaned = cleanText(value);
-  if (!cleaned) return null;
-  if (/^(https?:\/\/|\/)/i.test(cleaned)) return cleaned;
-  return null;
 }

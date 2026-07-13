@@ -3,6 +3,13 @@ import { hashPassword, verifyActivationCode, verifyPassword } from "@/lib/securi
 import { prisma } from "@/server/db/client";
 import { notificationProvider } from "@/server/notifications/provider";
 import { canActivateStatus, getDeviceActivationState } from "@/server/services/device-rules";
+import {
+  deletePrivateProfilePhoto,
+  processProfilePhotoDataUrl,
+  ProfilePhotoError,
+  storeProcessedProfilePhoto,
+  type StoredProfilePhoto,
+} from "@/server/services/profile-photo-storage";
 
 const personProfileTypes = ["PERSON", "CHILD", "SENIOR", "DEPENDENT_PERSON", "MEDICAL_PROFILE"] as const;
 const contactRelationships = ["MOTHER", "FATHER", "FAMILY", "RESPONSIBLE"] as const;
@@ -21,7 +28,7 @@ const optionalCleanText = (max: number) =>
 
 const photoDataUrlSchema = z
   .string()
-  .max(1_400_000)
+  .max(7_000_000)
   .regex(/^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/)
   .optional();
 
@@ -179,6 +186,14 @@ export async function activateDevice(input: ActivationInput) {
   const hasCriticalInformation = Boolean(input.criticalInformation);
   const allowCall = input.allowCall;
   const allowWhatsApp = input.allowWhatsApp;
+  const processedPhoto = input.photoDataUrl
+    ? await processProfilePhotoDataUrl(input.photoDataUrl).catch((error) => {
+        if (error instanceof ProfilePhotoError) return null;
+        throw error;
+      })
+    : null;
+
+  if (input.photoDataUrl && !processedPhoto) return { ok: false, reason: "photo_invalid" as const };
 
   const profile = await prisma.profile.create({
     data: {
@@ -186,7 +201,7 @@ export async function activateDevice(input: ActivationInput) {
       type: input.profileType,
       displayName: input.displayName,
       firstName: input.displayName,
-      photoUrl: sanitizePhotoDataUrl(input.photoDataUrl),
+      photoUrl: null,
       helpMessage:
         input.helpMessage ??
         "Esta persona usa una pulsera HelPlis. Por favor contacta a su responsable y acompanala en un lugar seguro.",
@@ -226,6 +241,33 @@ export async function activateDevice(input: ActivationInput) {
       },
     },
   });
+
+  let storedPhoto: StoredProfilePhoto | null = null;
+  if (processedPhoto) {
+    try {
+      storedPhoto = await storeProcessedProfilePhoto({
+        userId: user.id,
+        profileId: profile.id,
+        photo: processedPhoto,
+      });
+      await prisma.profile.update({
+        where: { id: profile.id },
+        data: {
+          photoStoragePath: storedPhoto.storagePath,
+          photoMimeType: storedPhoto.mimeType,
+          photoWidth: storedPhoto.width,
+          photoHeight: storedPhoto.height,
+          photoSizeBytes: storedPhoto.sizeBytes,
+          photoUpdatedAt: storedPhoto.updatedAt,
+          photoUrl: null,
+        },
+      });
+    } catch {
+      await deletePrivateProfilePhoto(storedPhoto?.storagePath);
+      await prisma.profile.delete({ where: { id: profile.id } }).catch(() => null);
+      return { ok: false, reason: "photo_storage" as const };
+    }
+  }
 
   const activatedAt = new Date();
   await prisma.device.update({
@@ -318,11 +360,4 @@ function relationshipLabel(value: ActivationInput["contactRelationshipCode"]) {
     RESPONSIBLE: "Responsable",
   };
   return labels[value];
-}
-
-function sanitizePhotoDataUrl(value: string | undefined) {
-  if (!value) return null;
-  if (value.length > 1_400_000) return null;
-  if (!/^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) return null;
-  return value;
 }
