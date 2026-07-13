@@ -90,7 +90,7 @@ describe("parser MIME", () => {
     const result = parseMimeHtml(fixture("multiple-phone.html"), 7003);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.phone).toBe("+5672222222 / +56987654321");
+    expect(result.data.phone).toBe("+56722222222 / +56987654321");
   });
 
   it("detecta estructura inesperada", () => {
