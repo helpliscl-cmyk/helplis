@@ -2,7 +2,6 @@ import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { Button } from "@/components/ui/button";
-import { logoutAction } from "@/features/auth/actions";
 
 const dashboardLinks = [
   ["/dashboard", "Resumen"],
@@ -53,7 +52,7 @@ export function AppShell({
       <header className="border-b border-[var(--brand-border)] bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <BrandLogo className="h-9" />
-          <form action={logoutAction}>
+          <form action="/logout" method="post">
             <Button variant="ghost" type="submit">
               <LogOut aria-hidden className="h-4 w-4" />
               Cerrar sesión
