@@ -87,6 +87,8 @@ const REQUIRED_FIELDS = [
   "sourceCheckedAt",
 ] as const;
 
+const PREFLIGHT_RBD = 2123;
+
 function assertDevelopmentDatabase() {
   const databaseUrl = process.env.DATABASE_URL ?? "";
   const production = process.env.VERCEL_ENV === "production" || process.env.VERCEL_TARGET_ENV === "production";
@@ -115,6 +117,115 @@ function markdownCell(value: unknown) {
   return String(value ?? "")
     .replace(/\|/g, "\\|")
     .replace(/\r?\n/g, " ");
+}
+
+function summarizeParsedFields(data: Record<string, unknown>) {
+  return {
+    rbd: data.rbd ?? null,
+    name: data.name ?? null,
+    address: data.address ?? null,
+    commune: data.commune ?? null,
+    region: data.region ?? null,
+    dependency: data.dependency ?? null,
+    officialRecognition: data.officialRecognition ?? null,
+    holderName: data.holderName ?? null,
+    directorName: data.directorName ?? null,
+    phone: data.phone ?? null,
+    contactEmail: data.contactEmail ?? null,
+    website: data.website ?? null,
+    educationLevels: data.educationLevels ?? null,
+    totalEnrollment: data.totalEnrollment ?? null,
+    averageStudentsPerCourse: data.averageStudentsPerCourse ?? null,
+    mimeUrl: data.mimeUrl ?? null,
+  };
+}
+
+function formatFields(fields: Record<string, unknown> | null) {
+  if (!fields) return "- Sin campos extraidos: el parser no recibio una ficha institucional valida.";
+  return Object.entries(fields)
+    .map(([key, value]) => `- ${key}: ${value ?? "campo no publicado"}`)
+    .join("\n");
+}
+
+async function runPreflight() {
+  const requestedUrl = buildMimeUrl(PREFLIGHT_RBD, DEFAULT_MIME_SCRAPER_CONFIG.baseUrl);
+  const response = await fetch(requestedUrl, {
+    headers: {
+      "user-agent": DEFAULT_MIME_SCRAPER_CONFIG.userAgent,
+      accept: "text/html,application/xhtml+xml",
+    },
+  });
+  const finalUrl = response.url || requestedUrl;
+  const redirected = finalUrl !== requestedUrl;
+  const contentType = response.headers.get("content-type") ?? "";
+  const httpStatus = response.status;
+  const html = await response.text();
+  const fixturePath = fixturePathFor(PREFLIGHT_RBD);
+  writeFileSync(fixturePath, sanitizeHtml(html), "utf8");
+  const parsed = parseMimeHtml(html, PREFLIGHT_RBD);
+  const fields = parsed.ok ? summarizeParsedFields(parsed.data as unknown as Record<string, unknown>) : null;
+  const htmlContainsInstitutionalFicha = parsed.ok && parsed.data.rbd === PREFLIGHT_RBD && Boolean(parsed.data.name);
+  const discardedEmails = parsed.ok
+    ? parsed.data.contacts.filter((contact) => contact.contactType === "GENERIC_MINEDUC" || contact.contactType !== "ESTABLISHMENT_GENERAL")
+    : [];
+
+  return {
+    rbd: PREFLIGHT_RBD,
+    requestedUrl,
+    finalUrl,
+    redirected,
+    contentType,
+    httpStatus,
+    htmlLength: html.length,
+    fixturePath,
+    parsedOk: parsed.ok,
+    parserStatus: parsed.ok ? "OK" : parsed.errorType,
+    parserMessage: parsed.ok ? "" : parsed.errorMessage,
+    htmlContainsInstitutionalFicha,
+    fields,
+    discardedEmails,
+  };
+}
+
+function writePreflightReport(preflight: Awaited<ReturnType<typeof runPreflight>>) {
+  const reportPath = resolve("docs", "mime-validation", `rancagua-current-url-preflight-${timestamp()}.md`);
+  const content = [
+    "# Validacion MIME Rancagua - URL vigente preflight",
+    "",
+    `Fecha: ${new Date().toISOString()}`,
+    "",
+    "## URL corregida",
+    "",
+    `- MIME_BASE_URL: ${DEFAULT_MIME_SCRAPER_CONFIG.baseUrl}`,
+    `- Ficha construida: ${buildMimeUrl(preflight.rbd, DEFAULT_MIME_SCRAPER_CONFIG.baseUrl)}`,
+    "",
+    "## Prueba previa sin persistencia",
+    "",
+    `- RBD consultado: ${preflight.rbd}`,
+    `- requestedUrl: ${preflight.requestedUrl}`,
+    `- finalUrl: ${preflight.finalUrl}`,
+    `- redirected: ${preflight.redirected}`,
+    `- HTTP status: ${preflight.httpStatus}`,
+    `- contentType: ${preflight.contentType || "sin content-type"}`,
+    `- HTML guardado: ${preflight.fixturePath}`,
+    `- Contiene ficha institucional real: ${preflight.htmlContainsInstitutionalFicha}`,
+    `- Resultado parser: ${preflight.parserStatus}`,
+    preflight.parserMessage ? `- Mensaje parser: ${preflight.parserMessage}` : "- Mensaje parser: sin errores",
+    "",
+    "## Campos extraidos",
+    "",
+    formatFields(preflight.fields),
+    "",
+    "## Decision",
+    "",
+    preflight.htmlContainsInstitutionalFicha
+      ? "- Preflight aprobado. El script puede continuar con los 10 RBD unicos de Rancagua."
+      : "- Preflight fallido. No se creo job y no se consultaron los otros nueve RBD.",
+    "",
+  ].join("\n");
+
+  writeFileSync(reportPath, content, "utf8");
+  return reportPath;
 }
 
 function fieldValue(record: Record<string, unknown>, field: (typeof REQUIRED_FIELDS)[number]) {
@@ -219,6 +330,12 @@ async function buildReport(jobId: string, lockProbe: string, replayCheck: Awaite
   const withEmail = rows.filter((row) => row.establishment?.contactEmail).length;
   const withPhone = rows.filter((row) => row.establishment?.phone).length;
   const withWebsite = rows.filter((row) => row.establishment?.website).length;
+  const withHolder = rows.filter((row) => row.establishment?.holderName || row.establishment?.holderId).length;
+  const discardedContacts = rows.flatMap((row) =>
+    (row.establishment?.contacts ?? [])
+      .filter((contact) => contact.contactType && contact.contactType !== "ESTABLISHMENT_GENERAL")
+      .map((contact) => ({ rbd: row.rbd, name: row.establishment?.name, contact })),
+  );
   const holderGroups = await prisma.holder.findMany({
     where: { establishments: { some: { rbd: { in: RANCAGUA_SAMPLE.map((item) => item.rbd) } } } },
     include: { establishments: { where: { rbd: { in: RANCAGUA_SAMPLE.map((item) => item.rbd) } } } },
@@ -239,6 +356,7 @@ async function buildReport(jobId: string, lockProbe: string, replayCheck: Awaite
     `- Con correo: ${withEmail}/${total} (${Math.round((withEmail / total) * 100)}%)`,
     `- Con telefono: ${withPhone}/${total} (${Math.round((withPhone / total) * 100)}%)`,
     `- Con sitio web: ${withWebsite}/${total} (${Math.round((withWebsite / total) * 100)}%)`,
+    `- Con sostenedor identificado: ${withHolder}/${total} (${Math.round((withHolder / total) * 100)}%)`,
     `- Estado job: ${job?.status ?? "sin job"}; exitos ${job?.successfulItems ?? 0}; fallos ${job?.failedItems ?? 0}; omitidos ${job?.skippedItems ?? 0}`,
     `- Prueba de lock: ${lockProbe}`,
     "",
@@ -254,12 +372,26 @@ async function buildReport(jobId: string, lockProbe: string, replayCheck: Awaite
         `${row.found.length}: ${row.found.join(", ")}`,
         row.absent.join(", ") || "ninguno",
         row.incorrect.join(", ") || "ninguno",
-        `Fuente seleccion: ${row.selectionSource}. URL: ${buildMimeUrl(row.rbd)}. ${row.attempt?.errorType ?? ""} ${row.attempt?.errorMessage ?? ""}`,
+        `Fuente seleccion: ${row.selectionSource}. requestedUrl: ${row.attempt?.requestedUrl ?? buildMimeUrl(row.rbd)}. finalUrl: ${row.attempt?.finalUrl ?? "sin finalUrl"}. redirected: ${row.attempt?.redirected ?? false}. contentType: ${row.attempt?.contentType ?? "s/c"}. ${row.attempt?.errorType ?? ""} ${row.attempt?.errorMessage ?? ""}`,
         row.finalStatus,
       ]
         .map(markdownCell)
         .join(" | "),
     ),
+    "",
+    "## Correos descartados o no principales",
+    "",
+    discardedContacts.length
+      ? [
+          "| RBD | Establecimiento | Email | Tipo | Etiqueta | Seccion |",
+          "| --- | --- | --- | --- | --- | --- |",
+          ...discardedContacts.map(({ rbd, name, contact }) =>
+            [rbd, name ?? "", contact.email ?? "", contact.contactType ?? "", contact.label ?? "", contact.section ?? ""]
+              .map(markdownCell)
+              .join(" | "),
+          ),
+        ].join("\n")
+      : "- No se registraron correos descartados o de secciones no principales.",
     "",
     "## Base de datos",
     "",
@@ -295,12 +427,12 @@ async function buildReport(jobId: string, lockProbe: string, replayCheck: Awaite
     "",
     "## Fixtures HTML",
     "",
-    ...RANCAGUA_SAMPLE.map((item) => `- tests/fixtures/mime/real-rancagua-${item.rbd}.html`),
+    ...RANCAGUA_SAMPLE.map((item) => `- tests/fixtures/mime/real-rancagua-current-${item.rbd}.html`),
     "",
   ].join("\n");
 
   writeFileSync(reportPath, content, "utf8");
-  return { reportPath, rows, totals: { total, withEmail, withPhone, withWebsite } };
+  return { reportPath, rows, totals: { total, withEmail, withPhone, withWebsite, withHolder } };
 }
 
 async function main() {
@@ -324,6 +456,20 @@ async function main() {
 
   console.log("Base segura: SQLite local.");
   console.log(`Muestra Rancagua: ${RANCAGUA_SAMPLE.map((item) => item.rbd).join(", ")}`);
+  console.log(`Preflight sin persistencia: RBD ${PREFLIGHT_RBD}.`);
+
+  const preflight = await runPreflight();
+  const preflightReportPath = writePreflightReport(preflight);
+  console.log(`Preflight HTTP ${preflight.httpStatus}; parser ${preflight.parserStatus}; ficha real: ${preflight.htmlContainsInstitutionalFicha}.`);
+  console.log(`requestedUrl: ${preflight.requestedUrl}`);
+  console.log(`finalUrl: ${preflight.finalUrl}`);
+  console.log(`Campos extraidos:\n${formatFields(preflight.fields)}`);
+  console.log(`Informe preflight: ${join(".", preflightReportPath.replace(process.cwd(), ""))}`);
+
+  if (!preflight.htmlContainsInstitutionalFicha) {
+    console.log("Preflight fallido: no se crea job y no se consultan los otros RBD.");
+    return;
+  }
 
   const job = await createMimeScrapeJobForRbds(
     RANCAGUA_SAMPLE.map((item) => item.rbd),
