@@ -30,6 +30,7 @@ function profile(overrides: Partial<Profile> = {}, contacts: Partial<EmergencyCo
     bloodType: "O+",
     medicalInstructions: "Evitar mani.",
     emergencyInstructions: "Contactar adulto.",
+    criticalInformation: null,
     organDonorOptional: null,
     healthProviderOptional: null,
     specialInstructions: "Contactar adulto.",
@@ -58,8 +59,10 @@ function profile(overrides: Partial<Profile> = {}, contacts: Partial<EmergencyCo
     returnInstructions: null,
     lostMessage: null,
     showPhoto: true,
+    showDisplayName: true,
     showFullName: false,
     showAlias: true,
+    showCriticalInformation: false,
     showMedicalInfo: false,
     showContactNames: true,
     showPhoneNumbers: false,
@@ -108,6 +111,8 @@ function profile(overrides: Partial<Profile> = {}, contacts: Partial<EmergencyCo
       isVisible: true,
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      type: index === 0 ? "PRIMARY" : "SECONDARY",
+      relationshipCode: index === 0 ? "MOTHER" : "FATHER",
       ...contact,
     })) as EmergencyContact[],
   };
@@ -126,7 +131,7 @@ describe("buildPublicProfileView", () => {
     expect(view.medications).toBeNull();
   });
 
-  it("does not expose medical fields for pets", () => {
+  it("does not expose legacy pet fields publicly", () => {
     const view = buildPublicProfileView(
       profile({
         type: "PET",
@@ -139,13 +144,16 @@ describe("buildPublicProfileView", () => {
       }),
     );
 
+    expect(view.type).toBe("PERSON");
+    expect(view.typeLabel).toBe("Persona");
     expect(view.displayName).toBe("Luna");
-    expect(view.species).toBe("Perro");
-    expect(view.veterinaryNotes).toBe("Vacunas al dia.");
+    expect(view.helpMessage).not.toMatch(/mascota|tutor/i);
+    expect(view.species).toBeNull();
+    expect(view.veterinaryNotes).toBeNull();
     expect(view.allergies).toBeNull();
   });
 
-  it("uses object fields without medical data", () => {
+  it("does not expose legacy object fields publicly", () => {
     const view = buildPublicProfileView(
       profile({
         type: "OBJECT",
@@ -157,9 +165,11 @@ describe("buildPublicProfileView", () => {
       }),
     );
 
-    expect(view.objectName).toBe("Llaves");
-    expect(view.objectDescription).toBe("Llavero con cinta azul.");
-    expect(view.returnInstructions).toBe("Coordinar devolucion.");
+    expect(view.type).toBe("PERSON");
+    expect(view.typeLabel).toBe("Persona");
+    expect(view.objectName).toBeNull();
+    expect(view.objectDescription).toBeNull();
+    expect(view.returnInstructions).toBeNull();
     expect(view.bloodType).toBeNull();
   });
 
@@ -191,5 +201,23 @@ describe("buildPublicProfileView", () => {
     expect(view.contacts[0].name).toBeNull();
     expect(view.contacts[0].callEnabled).toBe(false);
     expect(view.contacts[0].whatsappEnabled).toBe(false);
+  });
+
+  it("exposes critical information only when the single privacy flag is enabled", () => {
+    const hidden = buildPublicProfileView(
+      profile({
+        criticalInformation: "Puede desorientarse.",
+        showCriticalInformation: false,
+      }),
+    );
+    const visible = buildPublicProfileView(
+      profile({
+        criticalInformation: "Puede desorientarse.",
+        showCriticalInformation: true,
+      }),
+    );
+
+    expect(hidden.criticalInformation).toBeNull();
+    expect(visible.criticalInformation).toBe("Puede desorientarse.");
   });
 });

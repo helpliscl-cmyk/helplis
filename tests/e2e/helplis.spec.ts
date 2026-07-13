@@ -5,7 +5,7 @@ async function submitLead(page: Page, pack: "1" | "2" | "3", name: string, expec
   await expect(page.getByRole("heading", { name: "Comprar HelPlis" })).toBeVisible();
   await expect(page.getByText(expectedPrice).first()).toBeVisible();
   await expect(page.getByText("Resumen final")).toBeVisible();
-  await expect(page.getByText("Envío: se informa por separado")).toBeVisible();
+  await expect(page.getByText("Envio: se coordina al cierre")).toBeVisible();
 
   await page.getByLabel("Nombre").fill(name);
   await page.getByRole("textbox", { name: "WhatsApp" }).fill("+56912340000");
@@ -18,17 +18,17 @@ async function submitLead(page: Page, pack: "1" | "2" | "3", name: string, expec
 
   await expect(page.getByText("Solicitud registrada")).toBeVisible();
   await expect(page.getByText(expectedPrice).first()).toBeVisible();
-  await expect(page.getByText("Envío: pendiente por separado")).toBeVisible();
+  await expect(page.getByText("Envio: se coordina al cierre")).toBeVisible();
   await expect(page.getByRole("link", { name: "Abrir WhatsApp" })).toHaveAttribute("href", /wa\.me\/56988455230/);
 }
 
 test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Si se pierde, ayúdale a volver." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Si necesita ayuda, que sepan a quien llamar." })).toBeVisible();
   await expect(page.getByText("Desde").first()).toBeVisible();
   await expect(page.getByText("$18.000").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Elige tu HelPlis" })).toBeVisible();
-  await expect(page.getByText("¿Tiene costo mensual?")).toBeVisible();
+  await expect(page.getByText("Tiene costo mensual?")).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
@@ -44,7 +44,7 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByText("$28.000").first()).toBeVisible();
 
   await submitLead(page, "2", "Lead Pack 2", "$28.000", "adulto_mayor");
-  await submitLead(page, "1", "Lead Pack 1", "$18.000", "niño");
+  await submitLead(page, "1", "Lead Pack 1", "$18.000", "nino");
   await submitLead(page, "3", "Lead Pack 3", "$35.000", "persona_asistencia");
 
   await page.goto("/login");
@@ -77,12 +77,35 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
 
   await page.goto("/activate/HLP009");
   await page.getByLabel("Codigo secreto").fill("ACT-HLP009");
-  await page.getByLabel("Nombre responsable").fill("Responsable E2E");
+  await page.getByLabel("Nombre completo").fill("Responsable E2E");
+  await page.locator('input[name="ownerPhoneLocal"]').fill("12345678");
   await page.getByLabel("Correo").fill(`e2e-${Date.now()}@example.test`);
   await page.getByLabel("Contrasena").fill("HelPlisDemo123!");
-  await page.getByLabel("Nombre visible").fill("Perfil E2E");
-  await page.getByLabel("Contacto 1").fill("Contacto E2E");
-  await page.getByLabel("Telefono").first().fill("+56912345678");
+  await page.getByLabel("Acepto los terminos").check();
+  await page.getByLabel("Confirmo que estoy autorizado").check();
+  await page.getByRole("button", { name: "Continuar" }).click();
+
+  await page.locator('input[type="file"]').first().setInputFiles("public/brand/optimized/helplis-social-icon.png");
+  await expect(page.getByText("Foto cargada")).toBeVisible();
+  await page.locator('input[name="displayName"]').fill("Perfil E2E");
+  await page.getByRole("button", { name: "Continuar" }).click();
+
+  await page.locator('input[name="contactName"]').fill("Contacto E2E");
+  await page.locator('input[name="contactPhoneLocal"]').fill("12345678");
+  await expect(page.locator('select[name="contactRelationshipCode"]')).toHaveValue("MOTHER");
+  await page.getByRole("button", { name: "Continuar" }).click();
+
+  await page.locator('input[name="contact2Name"]').fill("Contacto Secundario E2E");
+  await page.locator('input[name="contact2PhoneLocal"]').fill("87654321");
+  await expect(page.locator('select[name="contact2RelationshipCode"]')).toHaveValue("FATHER");
+  await page.getByRole("button", { name: "Continuar" }).click();
+
+  await page.getByText("Agregar informacion critica").click();
+  await page.locator('textarea[name="criticalInformation"]').fill("Puede desorientarse y necesita permanecer acompanado.");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(page.getByText("Informacion importante")).not.toBeVisible();
+  await page.getByRole("button", { name: "Continuar" }).click();
   await page.getByRole("button", { name: "Confirmar activacion" }).click();
   await expect(page.getByRole("heading", { name: "Mis dispositivos" })).toBeVisible();
   await expect(page.getByText("HLP009")).toBeVisible();
@@ -92,8 +115,17 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.goto("/p/HLP009");
   await expect(page.getByRole("heading", { name: "Perfil E2E" })).toBeVisible();
   expect(await page.content()).not.toContain("+56912345678");
+  expect(await page.content()).not.toContain("Puede desorientarse");
   await page.getByRole("button", { name: "Compartir mi ubicacion con el responsable" }).click();
   await expect(page.getByText("Ubicacion compartida")).toBeVisible();
+
+  await page.goto("/dashboard/privacy");
+  await page.getByLabel("Mostrar informacion critica").check();
+  await page.getByRole("button", { name: "Guardar privacidad" }).click();
+  await expect(page).toHaveURL(/saved=1/);
+  await page.goto("/p/HLP009");
+  await expect(page.getByText("Informacion importante")).toBeVisible();
+  await expect(page.getByText("Puede desorientarse")).toBeVisible();
 
   await page.goto("/dashboard/devices");
   await page.getByRole("button", { name: "Marcar perdido" }).first().click();

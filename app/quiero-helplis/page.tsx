@@ -79,7 +79,7 @@ export default async function PurchaseIntentPage({
                 <p className="text-sm font-semibold uppercase text-[var(--brand-accent)]">Solicitud registrada</p>
                 <h1 className="mt-2 text-3xl font-semibold">Te contactaremos para coordinar tu HelPlis.</h1>
                 <p className="mt-3 text-sm leading-6 text-[var(--brand-muted)]">
-                  No se ha realizado un pago. Esta solicitud queda como intención de compra y el envío se cotiza o informa por separado.
+                  No se ha realizado un pago. Esta solicitud queda como intencion de compra; revisaremos tus datos y te responderemos por WhatsApp o correo.
                 </p>
               </div>
             </div>
@@ -95,7 +95,7 @@ export default async function PurchaseIntentPage({
                 <span className="font-semibold">Precio:</span> {formatCLP(confirmationPack.totalPrice)}
               </p>
               <p>
-                <span className="font-semibold">Envío:</span> pendiente por separado
+                <span className="font-semibold">Envio:</span> se coordina al cierre
               </p>
               {intent ? (
                 <>
@@ -173,7 +173,7 @@ export default async function PurchaseIntentPage({
             <PurchaseIntentForm
               initialPackId={selectedPack.id}
               source={source}
-              defaultPrimaryUse={source === "institution_cta" ? "institución" : undefined}
+              defaultPrimaryUse={source === "institution_cta" ? "institucion" : undefined}
               error={params.error}
             />
           </div>

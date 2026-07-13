@@ -10,7 +10,7 @@ export default function ForgotPasswordPage() {
         <CardHeader>
           <CardTitle>Recuperación simulada</CardTitle>
           <CardDescription>
-            Este MVP registra el flujo visual; el envío real se conectará con un proveedor externo.
+            Este MVP registra el flujo visual; la recuperacion por correo se conectara con un proveedor externo.
           </CardDescription>
         </CardHeader>
         <form className="grid gap-4">
@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
             <Input name="email" type="email" required />
           </Field>
           <Button type="submit" disabled>
-            Envío real pendiente
+            Recuperacion pendiente
           </Button>
         </form>
         <Link href="/login" className="mt-5 inline-block text-sm text-neutral-600 underline">

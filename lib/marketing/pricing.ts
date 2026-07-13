@@ -89,7 +89,7 @@ export function buildWhatsAppOrderMessage({
   const safeName = name.trim().replace(/\s+/g, " ");
   const safeCommune = commune.trim().replace(/\s+/g, " ");
 
-  return `Hola, soy ${safeName}. Me interesa comprar ${pack.name} (${pack.quantity} ${pack.quantity === 1 ? "pulsera" : "pulseras"}) de HelPlis por ${formatCLP(pack.totalPrice)}. Mi comuna es ${safeCommune}. Entiendo que el envío se paga aparte.`;
+  return `Hola, soy ${safeName}. Me interesa comprar ${pack.name} (${pack.quantity} ${pack.quantity === 1 ? "pulsera" : "pulseras"}) de HelPlis por ${formatCLP(pack.totalPrice)}. Mi comuna es ${safeCommune}. Quiero coordinar la compra.`;
 }
 
 export function buildWhatsAppOrderUrl(input: { name: string; commune: string; pack: HelplisPack; phoneE164: string }) {

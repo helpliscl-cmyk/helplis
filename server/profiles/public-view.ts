@@ -14,12 +14,12 @@ export const PROFILE_TYPE_LABELS: Record<ProfileType, string> = {
   SENIOR: "Adulto mayor",
   DEPENDENT_PERSON: "Persona con apoyo",
   MEDICAL_PROFILE: "Perfil medico",
-  PET: "Mascota",
-  LUGGAGE: "Equipaje",
-  OBJECT: "Objeto",
-  ASSET: "Activo",
-  EMPLOYEE: "Colaborador",
-  OTHER: "Otro",
+  PET: "Persona",
+  LUGGAGE: "Persona",
+  OBJECT: "Persona",
+  ASSET: "Persona",
+  EMPLOYEE: "Persona",
+  OTHER: "Persona",
 };
 
 export const HELP_MESSAGE_TEMPLATES: Partial<Record<ProfileType, string>> = {
@@ -30,13 +30,6 @@ export const HELP_MESSAGE_TEMPLATES: Partial<Record<ProfileType, string>> = {
     "Puedo requerir apoyo para comunicarme o desplazarme. Revisa las indicaciones autorizadas y contacta a mi red.",
   MEDICAL_PROFILE:
     "Revisa la informacion autorizada y contacta al responsable antes de tomar decisiones no urgentes.",
-  PET: "Soy una mascota con identificacion HelPlis. Por favor avisa a mi tutor antes de trasladarme.",
-  LUGGAGE:
-    "Este objeto tiene identificacion HelPlis. Por favor avisa al responsable para coordinar la devolucion.",
-  OBJECT:
-    "Este objeto tiene identificacion HelPlis. Por favor avisa al responsable para coordinar la devolucion.",
-  ASSET:
-    "Este activo tiene identificacion HelPlis. Por favor avisa al responsable para coordinar la devolucion.",
   PERSON:
     "Este HelPlis contiene informacion autorizada para contactar a mi red de apoyo si necesito ayuda.",
   OTHER:
@@ -45,8 +38,10 @@ export const HELP_MESSAGE_TEMPLATES: Partial<Record<ProfileType, string>> = {
 
 export type PublicContactView = {
   id: string;
+  type: string;
   name: string | null;
   relationship: string | null;
+  relationshipCode: string | null;
   availabilityNotes: string | null;
   phone: string | null;
   email: string | null;
@@ -74,6 +69,7 @@ export type PublicProfileView = {
   medicalConditions: string | null;
   medicalInstructions: string | null;
   emergencyInstructions: string | null;
+  criticalInformation: string | null;
   communicationNotes: string | null;
   mobilityNotes: string | null;
   sensoryNotes: string | null;
@@ -113,6 +109,7 @@ export function buildPublicProfileView(
   currentYear = new Date().getFullYear(),
 ): PublicProfileView {
   const isPerson = PERSON_PROFILE_TYPES.has(profile.type);
+  const publicType: ProfileType = isPerson ? profile.type : "PERSON";
   const canShowLegacyMedical = isPerson && profile.showMedicalInfo;
   const computedAge = profile.approximateAge ?? (profile.birthYear ? currentYear - profile.birthYear : null);
   const allowCall = profile.allowCall && profile.showCallButton;
@@ -120,13 +117,13 @@ export function buildPublicProfileView(
   const allowMessage = profile.allowMessage && profile.showMessageButton;
 
   return {
-    type: profile.type,
-    typeLabel: PROFILE_TYPE_LABELS[profile.type],
+    type: publicType,
+    typeLabel: PROFILE_TYPE_LABELS[publicType],
     displayName: visibleName(profile),
     alias: cleanText(profile.alias),
     photoUrl: profile.showPhoto ? cleanUrl(profile.photoUrl) : null,
     headline: cleanText(profile.headline),
-    helpMessage: cleanText(profile.helpMessage) ?? HELP_MESSAGE_TEMPLATES[profile.type] ?? HELP_MESSAGE_TEMPLATES.OTHER!,
+    helpMessage: cleanText(profile.helpMessage) ?? HELP_MESSAGE_TEMPLATES[publicType] ?? HELP_MESSAGE_TEMPLATES.OTHER!,
     description: cleanText(profile.description),
     statusMessage: cleanText(profile.statusMessage),
     medicalNotes: canShowLegacyMedical ? cleanText(profile.medicalNotes) : null,
@@ -149,6 +146,7 @@ export function buildPublicProfileView(
       isPerson && (profile.showMedicalInstructions || profile.showMedicalInfo)
         ? cleanText(profile.emergencyInstructions)
         : null,
+    criticalInformation: isPerson && profile.showCriticalInformation ? cleanText(profile.criticalInformation) : null,
     communicationNotes: isPerson && profile.showCommunicationNotes ? cleanText(profile.communicationNotes) : null,
     mobilityNotes: isPerson && profile.showMobilityNotes ? cleanText(profile.mobilityNotes) : null,
     sensoryNotes: isPerson && profile.showSensoryNotes ? cleanText(profile.sensoryNotes) : null,
@@ -159,28 +157,28 @@ export function buildPublicProfileView(
     commune: profile.showGeneralArea ? cleanText(profile.commune) : null,
     generalArea: profile.showGeneralArea ? cleanText(profile.generalArea) : null,
     exactAddress: profile.showExactAddress ? cleanText(profile.exactAddress) : null,
-    species: profile.type === "PET" ? cleanText(profile.species) : null,
-    petName: profile.type === "PET" ? cleanText(profile.petName ?? profile.displayName) : null,
-    breed: profile.type === "PET" ? cleanText(profile.breed) : null,
-    color: cleanText(profile.color),
-    sex: profile.type === "PET" ? cleanText(profile.sex) : null,
-    veterinaryNotes: profile.type === "PET" ? cleanText(profile.veterinaryNotes) : null,
-    microchipNumberOptional: profile.type === "PET" ? cleanText(profile.microchipNumberOptional) : null,
-    petBehaviorNotes: profile.type === "PET" ? cleanText(profile.petBehaviorNotes) : null,
-    objectName: isObjectProfile(profile.type) ? cleanText(profile.objectName ?? profile.displayName) : null,
-    objectCategory: isObjectProfile(profile.type) ? cleanText(profile.objectCategory) : null,
-    brand: isObjectProfile(profile.type) ? cleanText(profile.brand) : null,
-    model: isObjectProfile(profile.type) ? cleanText(profile.model) : null,
-    objectDescription: isObjectProfile(profile.type) ? cleanText(profile.objectDescription ?? profile.description) : null,
-    rewardMessage: isObjectProfile(profile.type) || profile.type === "PET" ? cleanText(profile.rewardMessage) : null,
-    returnInstructions: isObjectProfile(profile.type) ? cleanText(profile.returnInstructions) : null,
+    species: null,
+    petName: null,
+    breed: null,
+    color: null,
+    sex: null,
+    veterinaryNotes: null,
+    microchipNumberOptional: null,
+    petBehaviorNotes: null,
+    objectName: null,
+    objectCategory: null,
+    brand: null,
+    model: null,
+    objectDescription: null,
+    rewardMessage: null,
+    returnInstructions: null,
     lostMessage: cleanText(profile.lostMessage),
     showLocationButton: profile.allowLocationSharing && profile.showLocationButton,
     showWhatsAppButton: allowWhatsApp,
     showCallButton: allowCall,
     showMessageButton: allowMessage,
     allowFoundReport: profile.allowFoundReport,
-    contacts: profile.contacts.map((contact) =>
+    contacts: profile.contacts.slice(0, 2).map((contact) =>
       buildPublicContactView(contact, {
         showNames: profile.showContactNames,
         showPhoneNumbers: profile.showPhoneNumbers,
@@ -205,8 +203,10 @@ function buildPublicContactView(
   const normalizedPhone = normalizePhone(contact.phone);
   return {
     id: contact.id,
+    type: contact.type,
     name: options.showNames ? cleanText(contact.name) : null,
     relationship: options.showNames ? cleanText(contact.relationship) : null,
+    relationshipCode: contact.relationshipCode,
     availabilityNotes: cleanText(contact.availabilityNotes),
     phone: options.showPhoneNumbers ? normalizedPhone : null,
     email: cleanText(contact.email),
@@ -218,13 +218,8 @@ function buildPublicContactView(
 }
 
 function visibleName(profile: Profile) {
-  if (profile.type === "PET") {
-    return cleanText(profile.petName ?? profile.alias ?? profile.displayName) ?? "Mascota HelPlis";
-  }
-
-  if (isObjectProfile(profile.type)) {
-    return cleanText(profile.objectName ?? profile.alias ?? profile.displayName) ?? "Objeto HelPlis";
-  }
+  if (profile.showDisplayName === false) return "Persona HelPlis";
+  if (!PERSON_PROFILE_TYPES.has(profile.type)) return cleanText(profile.displayName) ?? "Persona HelPlis";
 
   if (profile.showFullName) {
     const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(" ").trim();
@@ -233,10 +228,6 @@ function visibleName(profile: Profile) {
 
   if (profile.showAlias && profile.alias) return cleanText(profile.alias) ?? "Perfil HelPlis";
   return cleanText(profile.firstName ?? profile.displayName) ?? "Perfil HelPlis";
-}
-
-function isObjectProfile(type: ProfileType) {
-  return type === "LUGGAGE" || type === "OBJECT" || type === "ASSET";
 }
 
 export function normalizePhone(value: string | null) {

@@ -8,7 +8,6 @@ import {
   Building2,
   CheckCircle2,
   Contact,
-  Dog,
   HeartPulse,
   KeyRound,
   MapPin,
@@ -51,19 +50,19 @@ export const metadata: Metadata = {
   },
 };
 
-const quickBenefits = ["Sin batería", "Sin aplicación obligatoria", "Información actualizable", "Sin mensualidad"];
+const quickBenefits = ["Sin bateria", "Sin aplicacion obligatoria", "Informacion actualizable", "Sin mensualidad"];
 
 const helpPoints: Array<[string, string, LucideIcon]> = [
-  ["Niños", "Contacto rápido si se separan en salidas, plazas o colegios.", Baby],
+  ["Ninos", "Contacto rapido si se separan en salidas, plazas o colegios.", Baby],
   ["Adultos mayores", "Instrucciones simples cuando alguien se desorienta.", UserRound],
   ["Personas que necesitan asistencia", "Datos autorizados para apoyar una respuesta clara.", HeartPulse],
-  ["Mascotas y objetos", "Una vía de contacto para recuperar lo importante.", Dog],
+  ["Dificultad para comunicarse", "Una forma simple de avisar a la familia y entender como ayudar.", Contact],
 ];
 
 const steps = [
-  ["Activas", "Ingresas el código y creas el perfil digital."],
-  ["Configuras", "Decides qué datos mostrar y qué contactos usar."],
-  ["Escanean", "La ficha permite llamar, escribir o compartir ubicación voluntaria."],
+  ["Escaneas", "El QR o NFC identifica la pulsera antes de activar."],
+  ["Configuras", "Creas el perfil de la persona y eliges dos contactos."],
+  ["Escanean", "La ficha permite llamar, escribir o compartir ubicacion voluntaria."],
 ];
 
 const productFeatures: Array<[string, string, LucideIcon]> = [
@@ -261,10 +260,13 @@ export default function Home() {
             </p>
             <div className="space-y-4">
               <h1 className="text-5xl font-semibold leading-tight tracking-normal text-[var(--brand-text)] sm:text-6xl">
-                Si se pierde, ayúdale a volver.
+                Si necesita ayuda, que sepan a quien llamar.
               </h1>
               <p className="max-w-xl text-lg leading-8 text-[var(--brand-muted)]">
-                HelPlis abre una ficha autorizada para que quien encuentre a una persona, mascota u objeto pueda contactar rápido.
+                HelPlis ayuda a identificar y contactar a la familia de una persona que necesita asistencia.
+              </p>
+              <p className="max-w-xl text-base leading-7 text-[var(--brand-muted)]">
+                Pensado para ninos, adultos mayores y personas que pueden requerir apoyo.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -333,7 +335,7 @@ export default function Home() {
               <SectionEyebrow>Pulsera HelPlis</SectionEyebrow>
               <h2 className="text-3xl font-semibold sm:text-4xl">Activas, configuras y queda lista.</h2>
               <p className="text-base leading-7 text-blue-50">
-                Cada pulsera incluye activación y acceso a un perfil digital que puedes actualizar después.
+                Cada pulsera se activa escaneando su QR o NFC y abre un perfil digital de la persona que puedes actualizar despues.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">

@@ -7,18 +7,12 @@ import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/server/db/client";
 
 const profileTypes = [
-  "PERSON",
-  "CHILD",
-  "SENIOR",
-  "DEPENDENT_PERSON",
-  "MEDICAL_PROFILE",
-  "PET",
-  "LUGGAGE",
-  "OBJECT",
-  "ASSET",
-  "EMPLOYEE",
-  "OTHER",
-];
+  ["CHILD", "Nino o nina"],
+  ["SENIOR", "Adulto mayor"],
+  ["DEPENDENT_PERSON", "Persona que requiere asistencia"],
+  ["MEDICAL_PROFILE", "Persona con dificultad para comunicarse"],
+  ["PERSON", "Persona"],
+] as const;
 
 export default async function DashboardProfilesPage() {
   const user = await requireUser();
@@ -32,7 +26,7 @@ export default async function DashboardProfilesPage() {
     <div className="grid gap-5">
       <header>
         <h1 className="text-2xl font-semibold">Perfiles</h1>
-        <p className="mt-1 text-sm text-neutral-600">Crea y revisa perfiles configurables.</p>
+        <p className="mt-1 text-sm text-neutral-600">Crea y revisa perfiles de personas.</p>
       </header>
       <Card>
         <h2 className="mb-4 text-lg font-semibold">Crear perfil</h2>
@@ -40,8 +34,10 @@ export default async function DashboardProfilesPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Tipo">
               <Select name="type">
-                {profileTypes.map((type) => (
-                  <option key={type} value={type}>{type}</option>
+                {profileTypes.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
                 ))}
               </Select>
             </Field>
@@ -49,23 +45,15 @@ export default async function DashboardProfilesPage() {
               <Input name="displayName" required />
             </Field>
           </div>
-          <Field label="Alias">
-            <Input name="alias" />
+          <Field label="Mensaje de ayuda">
+            <Textarea name="helpMessage" placeholder="Texto breve para orientar a quien escanee." />
           </Field>
-          <Field label="Instrucciones">
-            <Textarea name="specialInstructions" />
+          <Field label="Informacion critica opcional">
+            <Textarea
+              name="criticalInformation"
+              placeholder="Ej.: puede desorientarse, tiene dificultad para comunicarse o necesita permanecer acompanado."
+            />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Notas médicas">
-              <Textarea name="medicalNotes" />
-            </Field>
-            <Field label="Alergias">
-              <Textarea name="allergies" />
-            </Field>
-            <Field label="Medicamentos">
-              <Textarea name="medications" />
-            </Field>
-          </div>
           <Button type="submit">Guardar perfil</Button>
         </form>
       </Card>
@@ -75,12 +63,12 @@ export default async function DashboardProfilesPage() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h2 className="font-semibold">{profile.displayName}</h2>
-                <p className="text-sm text-neutral-600">{profile.alias ?? "Sin alias"}</p>
+                <p className="text-sm text-neutral-600">{profile.criticalInformation ? "Con informacion critica" : "Sin informacion critica"}</p>
               </div>
               <Badge>{profile.type}</Badge>
             </div>
             <p className="mt-3 text-sm text-neutral-600">
-              {profile._count.devices} dispositivos · {profile._count.contacts} contactos
+              {profile._count.devices} dispositivos - {profile._count.contacts} contactos
             </p>
           </Card>
         ))}

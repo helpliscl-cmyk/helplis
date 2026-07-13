@@ -1,310 +1,522 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
-import { Contact, Eye, KeyRound, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import type { ChangeEvent, ReactNode } from "react";
+import { useRef, useState } from "react";
+import {
+  Camera,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Contact,
+  Eye,
+  ImagePlus,
+  KeyRound,
+  Nfc,
+  QrCode,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckboxField, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { activateDeviceAction } from "@/features/activations/actions";
 
-const profileTypes = [
-  ["PERSON", "Persona"],
-  ["CHILD", "Nino o nina"],
-  ["SENIOR", "Adulto mayor"],
-  ["DEPENDENT_PERSON", "Persona con apoyo"],
-  ["MEDICAL_PROFILE", "Perfil medico"],
-  ["PET", "Mascota"],
-  ["LUGGAGE", "Equipaje"],
-  ["OBJECT", "Objeto"],
-  ["ASSET", "Activo"],
-  ["OTHER", "Otro"],
-];
-
-const helpTemplates: Record<string, string> = {
-  PERSON:
-    "Este HelPlis contiene informacion autorizada para contactar a mi red de apoyo si necesito ayuda.",
-  CHILD:
-    "Estoy con una pulsera HelPlis. Por favor contacta a mi adulto responsable y acompaname en un lugar seguro.",
-  SENIOR: "Puedo necesitar orientacion. Por favor hablame con calma y contacta a mi responsable.",
-  DEPENDENT_PERSON:
-    "Puedo requerir apoyo para comunicarme o desplazarme. Revisa las indicaciones autorizadas y contacta a mi red.",
-  MEDICAL_PROFILE:
-    "Revisa la informacion autorizada y contacta al responsable antes de tomar decisiones no urgentes.",
-  PET: "Soy una mascota con identificacion HelPlis. Por favor avisa a mi tutor antes de trasladarme.",
-  LUGGAGE:
-    "Este objeto tiene identificacion HelPlis. Por favor avisa al responsable para coordinar la devolucion.",
-  OBJECT:
-    "Este objeto tiene identificacion HelPlis. Por favor avisa al responsable para coordinar la devolucion.",
-  ASSET:
-    "Este activo tiene identificacion HelPlis. Por favor avisa al responsable para coordinar la devolucion.",
-  OTHER:
-    "Este HelPlis contiene informacion autorizada para ayudar a contactar a su responsable.",
+type ValidationResult = {
+  ok: boolean;
+  reason?: "invalid" | "unavailable" | null;
+  publicCode: string;
+  status?: string;
+  productType?: string;
 };
 
-const progress = [
-  ["1", "Codigo"],
-  ["2", "Perfil"],
-  ["3", "Contactos"],
-  ["4", "Privacidad"],
-  ["5", "Preview"],
+const steps = [
+  "Escanear HelPlis",
+  "Responsable",
+  "Foto y persona",
+  "Contacto prioritario",
+  "Contacto secundario",
+  "Informacion critica",
+  "Privacidad",
+  "Vista previa",
+  "Activacion completada",
 ];
 
-export function ActivationForm({ publicCode, error }: { publicCode?: string; error?: string }) {
-  const [profileType, setProfileType] = useState("PERSON");
-  const [displayName, setDisplayName] = useState("");
-  const [helpMessage, setHelpMessage] = useState(helpTemplates.PERSON);
-  const [contactName, setContactName] = useState("");
-  const isPersonProfile = ["PERSON", "CHILD", "SENIOR", "DEPENDENT_PERSON", "MEDICAL_PROFILE"].includes(profileType);
-  const isPetProfile = profileType === "PET";
-  const isObjectProfile = ["LUGGAGE", "OBJECT", "ASSET"].includes(profileType);
-  const profileLabel = useMemo(
-    () => profileTypes.find(([value]) => value === profileType)?.[1] ?? "Perfil",
-    [profileType],
-  );
+const profileTypes = [
+  ["CHILD", "Nino o nina"],
+  ["SENIOR", "Adulto mayor"],
+  ["DEPENDENT_PERSON", "Persona que requiere asistencia"],
+  ["MEDICAL_PROFILE", "Persona con dificultad para comunicarse"],
+  ["PERSON", "Persona"],
+] as const;
 
-  function updateType(value: string) {
-    setProfileType(value);
-    setHelpMessage(helpTemplates[value] ?? helpTemplates.OTHER);
+const relationshipOptions = [
+  ["MOTHER", "Mama"],
+  ["FATHER", "Papa"],
+  ["FAMILY", "Familiar"],
+  ["RESPONSIBLE", "Responsable"],
+] as const;
+
+const defaultHelpMessage =
+  "Esta persona usa una pulsera HelPlis. Por favor contacta a su responsable y acompanala en un lugar seguro.";
+
+export function ActivationForm({ publicCode: initialPublicCode, error }: { publicCode?: string; error?: string }) {
+  const [step, setStep] = useState(initialPublicCode ? 1 : 0);
+  const [publicCode, setPublicCode] = useState(initialPublicCode ?? "");
+  const [manualCode, setManualCode] = useState(initialPublicCode ?? "");
+  const [scanStatus, setScanStatus] = useState<string | null>(
+    initialPublicCode ? `Pulsera identificada: ${initialPublicCode}` : null,
+  );
+  const [isScanning, setIsScanning] = useState(false);
+  const [photoDataUrl, setPhotoDataUrl] = useState("");
+  const [photoStatus, setPhotoStatus] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("");
+  const [helpMessage, setHelpMessage] = useState(defaultHelpMessage);
+  const [criticalEnabled, setCriticalEnabled] = useState(false);
+  const [criticalInformation, setCriticalInformation] = useState("");
+  const [primaryPhone, setPrimaryPhone] = useState("");
+  const [secondaryPhone, setSecondaryPhone] = useState("");
+  const [showCriticalInformation, setShowCriticalInformation] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(true);
+  const [showDisplayName, setShowDisplayName] = useState(true);
+  const [allowCall, setAllowCall] = useState(true);
+  const [allowWhatsApp, setAllowWhatsApp] = useState(true);
+  const [allowLocationSharing, setAllowLocationSharing] = useState(true);
+  const [allowFoundReport, setAllowFoundReport] = useState(true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const phoneWarning =
+    primaryPhone.length === 8 && secondaryPhone.length === 8 && primaryPhone === secondaryPhone
+      ? "Ambos contactos usan el mismo numero. Puedes continuar, pero recomendamos tener dos alternativas."
+      : null;
+
+  async function validateAndContinue(rawCode: string) {
+    const code = extractPublicCode(rawCode);
+    if (!code) {
+      setScanStatus("No pude encontrar un codigo HelPlis valido.");
+      return;
+    }
+
+    setScanStatus("Validando pulsera...");
+    const response = await fetch("/api/activation/validate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ publicCode: code }),
+    });
+    const payload = (await response.json().catch(() => null)) as ValidationResult | null;
+    if (!response.ok || !payload?.ok) {
+      setScanStatus(payload?.reason === "unavailable" ? "Esta pulsera no esta disponible para activar." : "Codigo no valido.");
+      return;
+    }
+
+    stopCamera();
+    setPublicCode(payload.publicCode);
+    setManualCode(payload.publicCode);
+    setScanStatus(`Pulsera identificada: ${payload.publicCode}`);
+    setStep(1);
+  }
+
+  async function startQrScanner() {
+    setScanStatus("Solicitando permiso de camara...");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setScanStatus("Este navegador no permite abrir la camara. Usa ingreso manual.");
+      return;
+    }
+
+    const detectorApi = window as Window & {
+      BarcodeDetector?: new (options?: { formats?: string[] }) => {
+        detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue?: string }>>;
+      };
+    };
+    if (!detectorApi.BarcodeDetector) {
+      setScanStatus("El lector QR del navegador no esta disponible. Usa ingreso manual.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      streamRef.current = stream;
+      setIsScanning(true);
+      setScanStatus("Apunta la camara al QR de la pulsera.");
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      const detector = new detectorApi.BarcodeDetector({ formats: ["qr_code"] });
+      const scan = async () => {
+        if (!videoRef.current || !streamRef.current) return;
+        const codes = await detector.detect(videoRef.current).catch(() => []);
+        const rawValue = codes[0]?.rawValue;
+        if (rawValue) {
+          await validateAndContinue(rawValue);
+          return;
+        }
+        window.setTimeout(scan, 450);
+      };
+      void scan();
+    } catch {
+      setIsScanning(false);
+      setScanStatus("No se pudo usar la camara. Puedes ingresar el codigo manualmente.");
+      stopCamera();
+    }
+  }
+
+  async function readNfc() {
+    const nfcApi = window as Window & {
+      NDEFReader?: new () => {
+        scan: () => Promise<void>;
+        onreading: ((event: { message: { records: Array<{ data?: DataView; recordType?: string }> } }) => void) | null;
+      };
+    };
+    if (!nfcApi.NDEFReader) {
+      setScanStatus("Web NFC no esta disponible en este navegador. Usa QR o ingreso manual.");
+      return;
+    }
+    try {
+      const reader = new nfcApi.NDEFReader();
+      reader.onreading = (event) => {
+        const text = event.message.records
+          .map((record) => {
+            if (!record.data) return "";
+            return new TextDecoder().decode(record.data);
+          })
+          .join(" ");
+        void validateAndContinue(text);
+      };
+      await reader.scan();
+      setScanStatus("Acerca el telefono al NFC de la pulsera.");
+    } catch {
+      setScanStatus("No se pudo leer NFC. Usa QR o ingreso manual.");
+    }
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setIsScanning(false);
+  }
+
+  function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setPhotoStatus("Usa una imagen JPG, PNG o WebP.");
+      return;
+    }
+    if (file.size > 1_200_000) {
+      setPhotoStatus("La foto debe pesar menos de 1.2 MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = typeof reader.result === "string" ? reader.result : "";
+      setPhotoDataUrl(value);
+      setPhotoStatus("Foto cargada. Puedes reemplazarla o eliminarla.");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function nextStep() {
+    setStep((value) => Math.min(value + 1, steps.length - 1));
+  }
+
+  function previousStep() {
+    setStep((value) => Math.max(value - 1, 0));
   }
 
   return (
     <Card className="w-full max-w-4xl p-5">
       <CardHeader>
-        <CardTitle>Activar dispositivo</CardTitle>
+        <CardTitle>Activa tu HelPlis</CardTitle>
         <CardDescription>
-          Completa la ficha publica con privacidad segura desde el inicio. La informacion medica es opcional.
+          Escanea el codigo QR de tu pulsera o acerca el telefono al NFC para identificarla.
         </CardDescription>
       </CardHeader>
 
-      <div className="mb-6 grid gap-2 sm:grid-cols-5">
-        {progress.map(([number, title]) => (
-          <div key={title} className="rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] p-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--brand-text)]">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e6fbf9] text-xs text-[var(--brand-primary-dark)]">
-                {number}
-              </span>
-              {title}
-            </div>
-          </div>
-        ))}
-      </div>
+      <Progress current={step} />
 
       {error ? (
         <p className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          No fue posible activar. Revisa el codigo secreto, el estado del dispositivo o las credenciales.
+          No fue posible activar. Revisa la pulsera, el codigo secreto o las credenciales.
         </p>
       ) : null}
 
       <form action={activateDeviceAction} className="grid gap-6">
-        <section className="grid gap-4">
-          <SectionTitle icon={<KeyRound aria-hidden className="h-4 w-4" />} title="Codigo y responsable" />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Codigo publico">
-              <Input name="publicCode" required defaultValue={publicCode} placeholder="HLP009" />
-            </Field>
-            <Field label="Codigo secreto">
-              <Input name="activationCode" required placeholder="ACT-HLP009" />
-            </Field>
-            <Field label="Nombre responsable">
-              <Input name="ownerName" required placeholder="Responsable" />
-            </Field>
-            <Field label="Correo">
-              <Input name="email" type="email" required placeholder="persona@example.test" />
-            </Field>
-            <Field label="Contrasena">
-              <Input name="password" type="password" required placeholder="Minimo 8 caracteres" />
-            </Field>
-          </div>
+        <input type="hidden" name="publicCode" value={publicCode} />
+        <input type="hidden" name="photoDataUrl" value={photoDataUrl} />
+
+        <section className={step === 0 ? "grid gap-4" : "hidden"}>
+            <SectionTitle icon={<QrCode aria-hidden className="h-4 w-4" />} title="Paso 1: Escanear HelPlis" />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Button type="button" onClick={startQrScanner}>
+                <Camera aria-hidden className="h-4 w-4" />
+                Escanear codigo QR
+              </Button>
+              <Button type="button" variant="secondary" onClick={readNfc}>
+                <Nfc aria-hidden className="h-4 w-4" />
+                Leer NFC
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setScanStatus("Ingresa el codigo impreso en la pulsera.")}>
+                Ingresar codigo manualmente
+              </Button>
+            </div>
+            {isScanning ? (
+              <div className="overflow-hidden rounded-md border border-[var(--brand-border)] bg-black">
+                <video ref={videoRef} className="aspect-video w-full object-cover" muted playsInline />
+              </div>
+            ) : null}
+            <div className="grid gap-3 rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] p-4 sm:grid-cols-[1fr_auto]">
+              <Field label="No puedo escanear">
+                <Input
+                  value={manualCode}
+                  onChange={(event) => setManualCode(event.target.value.toUpperCase())}
+                  placeholder="HLP009 o URL HelPlis"
+                />
+              </Field>
+              <Button type="button" variant="secondary" className="self-end" onClick={() => validateAndContinue(manualCode)}>
+                Validar pulsera
+              </Button>
+            </div>
+            {scanStatus ? <Status>{scanStatus}</Status> : null}
         </section>
 
-        <section className="grid gap-4">
-          <SectionTitle icon={<UserRound aria-hidden className="h-4 w-4" />} title="Perfil publico" />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Tipo de perfil">
-              <Select name="profileType" value={profileType} onChange={(event) => updateType(event.target.value)}>
-                {profileTypes.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Nombre visible">
-              <Input
-                name="displayName"
-                required
-                placeholder="Alias o nombre visible"
-                onChange={(event) => setDisplayName(event.target.value)}
+        <section className={step === 1 ? "grid gap-4" : "hidden"}>
+            <SectionTitle icon={<KeyRound aria-hidden className="h-4 w-4" />} title="Paso 2: Datos del responsable" />
+            <Status>Pulsera identificada: {publicCode}</Status>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Codigo secreto">
+                <Input name="activationCode" required placeholder="ACT-HLP009" />
+              </Field>
+              <Field label="Nombre completo">
+                <Input name="ownerName" autoComplete="name" required />
+              </Field>
+              <PhoneInput label="Telefono" name="ownerPhoneLocal" required />
+              <Field label="Correo">
+                <Input name="email" type="email" autoComplete="email" required />
+              </Field>
+              <Field label="Contrasena">
+                <Input name="password" type="password" autoComplete="new-password" minLength={8} required />
+              </Field>
+            </div>
+            <CheckboxField name="termsAccepted" label="Acepto los terminos de uso y la politica de privacidad." />
+            <CheckboxField
+              name="administrationConsent"
+              label="Confirmo que estoy autorizado para administrar el perfil de esta persona."
+            />
+        </section>
+
+        <section className={step === 2 ? "grid gap-4" : "hidden"}>
+            <SectionTitle icon={<ImagePlus aria-hidden className="h-4 w-4" />} title="Paso 3: Foto y datos de la persona" />
+            <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+              <div className="grid gap-3">
+                <div className="grid aspect-square place-items-center overflow-hidden rounded-md border border-[var(--brand-border)] bg-[#f8fbfe]">
+                  {photoDataUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photoDataUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="grid gap-2 p-4 text-center text-sm text-[var(--brand-muted)]">
+                      <ImagePlus aria-hidden className="mx-auto h-8 w-8 text-[var(--brand-accent)]" />
+                      Foto recomendada
+                    </div>
+                  )}
+                </div>
+                <input ref={cameraInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="user" className="hidden" onChange={handlePhoto} />
+                <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhoto} />
+                <Button type="button" variant="secondary" onClick={() => cameraInputRef.current?.click()}>
+                  <Camera aria-hidden className="h-4 w-4" />
+                  Tomar foto
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => galleryInputRef.current?.click()}>
+                  <ImagePlus aria-hidden className="h-4 w-4" />
+                  Elegir desde galeria
+                </Button>
+                {photoDataUrl ? (
+                  <Button type="button" variant="ghost" onClick={() => setPhotoDataUrl("")}>
+                    <Trash2 aria-hidden className="h-4 w-4" />
+                    Eliminar foto
+                  </Button>
+                ) : null}
+                {photoStatus ? <p className="text-xs text-[var(--brand-muted)]">{photoStatus}</p> : null}
+              </div>
+              <div className="grid gap-4">
+                <p className="text-sm leading-6 text-[var(--brand-muted)]">
+                  Esta foto ayudara a reconocer a la persona cuando alguien escanee su HelPlis.
+                </p>
+                <Field label="Tipo de apoyo">
+                  <Select name="profileType" defaultValue="CHILD" required>
+                    {profileTypes.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Nombre visible">
+                  <Input name="displayName" required value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+                </Field>
+                <Field label="Edad opcional">
+                  <Input name="approximateAge" type="number" min="0" max="130" placeholder="Opcional" />
+                </Field>
+                <Field label="Mensaje de ayuda">
+                  <Textarea name="helpMessage" maxLength={500} value={helpMessage} onChange={(event) => setHelpMessage(event.target.value)} />
+                </Field>
+              </div>
+            </div>
+        </section>
+
+        <div className={step === 3 ? "block" : "hidden"}>
+          <ContactStep
+            title="Paso 4: Contacto prioritario"
+            name="contact"
+            defaultRelationship="MOTHER"
+            phone={primaryPhone}
+            setPhone={setPrimaryPhone}
+            required
+          />
+        </div>
+
+        <div className={step === 4 ? "block" : "hidden"}>
+          <ContactStep
+            title="Paso 5: Contacto secundario"
+            name="contact2"
+            defaultRelationship="FATHER"
+            phone={secondaryPhone}
+            setPhone={setSecondaryPhone}
+            required
+          />
+        </div>
+
+        <section className={step === 5 ? "grid gap-4" : "hidden"}>
+            <SectionTitle icon={<Sparkles aria-hidden className="h-4 w-4" />} title="Paso 6: Informacion critica opcional" />
+            <label className="flex items-start gap-3 rounded-md border border-[var(--brand-border)] bg-white p-3 text-sm text-[var(--brand-text)]">
+              <input
+                type="checkbox"
+                checked={criticalEnabled}
+                onChange={(event) => setCriticalEnabled(event.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-[var(--brand-border)] text-[var(--brand-primary-dark)] focus:ring-[var(--brand-primary-light)]"
               />
-            </Field>
-            <Field label="Alias opcional">
-              <Input name="alias" placeholder="Ej: Mati, Luna, Maleta azul" />
-            </Field>
-            <Field label="Edad aproximada">
-              <Input name="approximateAge" type="number" min="0" max="130" placeholder="Opcional" />
-            </Field>
-            <Field label="Comuna">
-              <Input name="commune" placeholder="Opcional" />
-            </Field>
-            <Field label="Sector">
-              <Input name="generalArea" placeholder="Opcional" />
-            </Field>
-          </div>
-          <Field label="Mensaje de ayuda">
-            <Textarea name="helpMessage" value={helpMessage} onChange={(event) => setHelpMessage(event.target.value)} />
-          </Field>
-          <Field label="Descripcion breve">
-            <Textarea name="description" placeholder="Dato contextual autorizado para quien escanee." />
-          </Field>
+              <span>Agregar informacion critica</span>
+            </label>
+            {criticalEnabled ? (
+              <Field label="Hay algo importante que una persona deba saber para ayudar?">
+                <Textarea
+                  name="criticalInformation"
+                  maxLength={700}
+                  value={criticalInformation}
+                  onChange={(event) => setCriticalInformation(event.target.value)}
+                  placeholder="Ej.: tiene dificultad para comunicarse, es alergico a la penicilina, puede desorientarse o necesita permanecer acompanado."
+                />
+              </Field>
+            ) : null}
         </section>
 
-        {isPersonProfile ? (
-          <section className="grid gap-4">
-            <SectionTitle icon={<Sparkles aria-hidden className="h-4 w-4" />} title="Informacion critica opcional" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Grupo sanguineo">
-                <Input name="bloodType" placeholder="Ej: O+" />
-              </Field>
-              <Field label="Alergias">
-                <Input name="allergies" placeholder="Opcional" />
-              </Field>
-              <Field label="Condiciones">
-                <Input name="medicalConditions" placeholder="Opcional" />
-              </Field>
-              <Field label="Medicamentos">
-                <Input name="medications" placeholder="Opcional" />
-              </Field>
+        <section className={step === 6 ? "grid gap-4" : "hidden"}>
+            <SectionTitle icon={<ShieldCheck aria-hidden className="h-4 w-4" />} title="Paso 7: Privacidad" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Toggle name="showPhoto" label="Mostrar foto" checked={showPhoto} onChange={setShowPhoto} />
+              <Toggle name="showDisplayName" label="Mostrar nombre visible" checked={showDisplayName} onChange={setShowDisplayName} />
+              <Toggle name="allowCall" label="Permitir llamada" checked={allowCall} onChange={setAllowCall} />
+              <Toggle name="allowWhatsApp" label="Permitir WhatsApp" checked={allowWhatsApp} onChange={setAllowWhatsApp} />
+              <Toggle
+                name="allowLocationSharing"
+                label="Permitir compartir ubicacion"
+                checked={allowLocationSharing}
+                onChange={setAllowLocationSharing}
+              />
+              <Toggle name="allowFoundReport" label="Permitir reportar encontrado" checked={allowFoundReport} onChange={setAllowFoundReport} />
+              {criticalInformation ? (
+                <Toggle
+                  name="showCriticalInformation"
+                  label="Mostrar informacion critica"
+                  checked={showCriticalInformation}
+                  onChange={setShowCriticalInformation}
+                />
+              ) : null}
             </div>
-            <Field label="Instrucciones medicas">
-              <Textarea name="medicalInstructions" placeholder="Indicaciones breves autorizadas." />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Comunicacion">
-                <Textarea name="communicationNotes" />
-              </Field>
-              <Field label="Movilidad">
-                <Textarea name="mobilityNotes" />
-              </Field>
-              <Field label="Sensorial">
-                <Textarea name="sensoryNotes" />
-              </Field>
-            </div>
-          </section>
-        ) : null}
-
-        {isPetProfile ? (
-          <section className="grid gap-4">
-            <SectionTitle icon={<Eye aria-hidden className="h-4 w-4" />} title="Datos de mascota" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Nombre mascota">
-                <Input name="petName" />
-              </Field>
-              <Field label="Especie">
-                <Input name="species" placeholder="Perro, gato..." />
-              </Field>
-              <Field label="Raza">
-                <Input name="breed" />
-              </Field>
-              <Field label="Color">
-                <Input name="color" />
-              </Field>
-            </div>
-            <Field label="Notas veterinarias">
-              <Textarea name="veterinaryNotes" />
-            </Field>
-            <Field label="Comportamiento">
-              <Textarea name="petBehaviorNotes" />
-            </Field>
-          </section>
-        ) : null}
-
-        {isObjectProfile ? (
-          <section className="grid gap-4">
-            <SectionTitle icon={<Eye aria-hidden className="h-4 w-4" />} title="Datos de objeto" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Nombre objeto">
-                <Input name="objectName" />
-              </Field>
-              <Field label="Categoria">
-                <Input name="objectCategory" placeholder="Equipaje, llaves, activo..." />
-              </Field>
-              <Field label="Marca">
-                <Input name="brand" />
-              </Field>
-              <Field label="Modelo">
-                <Input name="model" />
-              </Field>
-              <Field label="Color">
-                <Input name="color" />
-              </Field>
-            </div>
-            <Field label="Instrucciones de devolucion">
-              <Textarea name="returnInstructions" />
-            </Field>
-            <Field label="Recompensa opcional">
-              <Input name="rewardMessage" />
-            </Field>
-          </section>
-        ) : null}
-
-        <section className="grid gap-4">
-          <SectionTitle icon={<Contact aria-hidden className="h-4 w-4" />} title="Contactos" />
-          <ContactFields index={1} required onNameChange={setContactName} />
-          <ContactFields index={2} />
-          <ContactFields index={3} />
         </section>
 
-        <section className="grid gap-4">
-          <SectionTitle icon={<ShieldCheck aria-hidden className="h-4 w-4" />} title="Privacidad inicial" />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <CheckboxField name="showPhoto" label="Mostrar foto" defaultChecked />
-            <CheckboxField name="showAlias" label="Mostrar alias" defaultChecked />
-            <CheckboxField name="showFullName" label="Mostrar nombre completo" />
-            <CheckboxField name="showContactNames" label="Mostrar nombres de contactos" defaultChecked />
-            <CheckboxField name="showPhoneNumbers" label="Mostrar telefonos como texto" />
-            <CheckboxField name="showApproximateAge" label="Mostrar edad aproximada" />
-            <CheckboxField name="showBloodType" label="Mostrar grupo sanguineo" />
-            <CheckboxField name="showAllergies" label="Mostrar alergias" />
-            <CheckboxField name="showMedicalConditions" label="Mostrar condiciones" />
-            <CheckboxField name="showMedications" label="Mostrar medicamentos" />
-            <CheckboxField name="showMedicalInstructions" label="Mostrar instrucciones medicas" />
-            <CheckboxField name="showCommunicationNotes" label="Mostrar comunicacion" />
-            <CheckboxField name="showMobilityNotes" label="Mostrar movilidad" />
-            <CheckboxField name="showSensoryNotes" label="Mostrar sensorial" />
-            <CheckboxField name="showGeneralArea" label="Mostrar comuna/sector" />
-            <CheckboxField name="showLocationButton" label="Permitir ubicacion voluntaria" defaultChecked />
-            <CheckboxField name="showWhatsAppButton" label="Permitir WhatsApp" defaultChecked />
-            <CheckboxField name="showCallButton" label="Permitir llamada" defaultChecked />
-            <CheckboxField name="showMessageButton" label="Permitir mensaje" defaultChecked />
-            <CheckboxField name="allowFoundReport" label="Permitir reporte encontrado" defaultChecked />
-          </div>
+        <section className={step === 7 ? "grid gap-4" : "hidden"}>
+            <SectionTitle icon={<Eye aria-hidden className="h-4 w-4" />} title="Paso 8: Vista previa" />
+            <div className="grid gap-4 rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] p-4">
+              <div className="flex items-center gap-4">
+                <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--brand-primary)] text-2xl font-semibold text-white">
+                  {photoDataUrl && showPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photoDataUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    (displayName || "H").slice(0, 1).toUpperCase()
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-[var(--brand-muted)]">Ficha publica</p>
+                  <h3 className="text-2xl font-semibold">{showDisplayName ? displayName || "Nombre visible" : "Persona HelPlis"}</h3>
+                </div>
+              </div>
+              <p className="leading-7 text-[var(--brand-muted)]">{helpMessage}</p>
+              <div className="flex flex-wrap gap-2 text-sm font-medium text-[var(--brand-primary-dark)]">
+                {allowCall ? <span>Llamar contacto prioritario</span> : null}
+                {allowWhatsApp ? <span>WhatsApp contacto prioritario</span> : null}
+                {allowLocationSharing ? <span>Compartir ubicacion</span> : null}
+                {allowFoundReport ? <span>Reportar encontrado</span> : null}
+              </div>
+              {criticalInformation && showCriticalInformation ? (
+                <div className="rounded-md border border-[#b9ece8] bg-white p-3">
+                  <h4 className="font-semibold">Informacion importante</h4>
+                  <p className="mt-1 text-sm leading-6 text-[var(--brand-muted)]">{criticalInformation}</p>
+                </div>
+              ) : null}
+              {phoneWarning ? <Status>{phoneWarning}</Status> : null}
+            </div>
         </section>
 
-        <section className="grid gap-4 rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] p-4">
-          <SectionTitle icon={<Eye aria-hidden className="h-4 w-4" />} title="Asi vera la ficha quien escanee" />
-          <div className="rounded-md bg-white p-4">
-            <p className="text-xs font-medium text-[var(--brand-muted)]">{profileLabel}</p>
-            <h3 className="mt-1 text-xl font-semibold">{displayName || "Nombre visible"}</h3>
-            <p className="mt-3 text-sm leading-6 text-[var(--brand-muted)]">{helpMessage}</p>
-            <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-[var(--brand-primary-dark)]">
-              <span>Llamar</span>
-              <span>WhatsApp</span>
-              <span>Compartir ubicacion</span>
-              <span>Reportar encontrado</span>
-            </div>
-            <p className="mt-4 text-xs text-[var(--brand-muted)]">
-              Primer contacto: {contactName || "Contacto principal"}. Los telefonos no se muestran como texto salvo que lo autorices.
+        <section className={step === 8 ? "grid gap-4" : "hidden"}>
+            <SectionTitle icon={<CheckCircle2 aria-hidden className="h-4 w-4" />} title="Paso 9: Activacion completada" />
+            <p className="text-sm leading-6 text-[var(--brand-muted)]">
+              Revisa la vista previa y confirma. Despues podras ajustar privacidad desde tu dashboard.
             </p>
-          </div>
+            <Button type="submit" className="w-full" variant="accent">
+              <KeyRound aria-hidden className="h-4 w-4" />
+              Confirmar activacion
+            </Button>
         </section>
 
-        <Button type="submit" className="w-full" variant="accent">
-          <KeyRound aria-hidden className="h-4 w-4" />
-          Confirmar activacion
-        </Button>
+        <div className="flex flex-col-reverse gap-3 border-t border-[var(--brand-border)] pt-4 sm:flex-row sm:justify-between">
+          <Button type="button" variant="secondary" onClick={previousStep} disabled={step === 0}>
+            <ChevronLeft aria-hidden className="h-4 w-4" />
+            Volver
+          </Button>
+          {step < 8 ? (
+            <Button type="button" onClick={nextStep} disabled={step === 0 && !publicCode}>
+              Continuar
+              <ChevronRight aria-hidden className="h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
       </form>
     </Card>
+  );
+}
+
+function Progress({ current }: { current: number }) {
+  return (
+    <div className="mb-6 grid gap-2 sm:grid-cols-3 lg:grid-cols-9">
+      {steps.map((title, index) => (
+        <div
+          key={title}
+          className={[
+            "min-h-16 rounded-md border p-2 text-xs",
+            index <= current ? "border-[var(--brand-primary-light)] bg-[#eafffb]" : "border-[var(--brand-border)] bg-white",
+          ].join(" ")}
+        >
+          <div className="font-semibold">{index + 1}</div>
+          <div className="mt-1 leading-4">{title}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -317,35 +529,110 @@ function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
   );
 }
 
-function ContactFields({
-  index,
-  required,
-  onNameChange,
-}: {
-  index: 1 | 2 | 3;
-  required?: boolean;
-  onNameChange?: (value: string) => void;
-}) {
-  const suffix = index === 1 ? "" : String(index);
+function Status({ children }: { children: ReactNode }) {
   return (
-    <div className="grid gap-4 rounded-md border border-[var(--brand-border)] bg-white p-4 sm:grid-cols-2">
-      <Field label={`Contacto ${index}`}>
-        <Input
-          name={`contact${suffix}Name`}
-          required={required}
-          placeholder="Nombre contacto"
-          onChange={(event) => onNameChange?.(event.target.value)}
-        />
-      </Field>
-      <Field label="Telefono">
-        <Input name={`contact${suffix}Phone`} type="tel" required={required} placeholder="+569..." />
-      </Field>
-      <Field label="Relacion">
-        <Input name={`contact${suffix}Relationship`} placeholder="Madre, tutor, responsable..." />
-      </Field>
-      <Field label="Disponibilidad">
-        <Input name={`contact${suffix}AvailabilityNotes`} placeholder="Principal, horario escolar..." />
-      </Field>
-    </div>
+    <p aria-live="polite" className="rounded-md border border-[var(--brand-border)] bg-white p-3 text-sm text-[var(--brand-muted)]">
+      {children}
+    </p>
   );
+}
+
+function PhoneInput({ label, name, required, value, onChange }: { label: string; name: string; required?: boolean; value?: string; onChange?: (value: string) => void }) {
+  return (
+    <Field label={label}>
+      <div className="flex overflow-hidden rounded-md border border-[var(--brand-border)] bg-white focus-within:border-[var(--brand-primary-light)] focus-within:ring-2 focus-within:ring-[var(--brand-primary-light)]/20">
+        <span className="grid min-h-11 place-items-center border-r border-[var(--brand-border)] bg-[#f8fbfe] px-3 text-base font-semibold text-[var(--brand-primary-dark)]">
+          +569
+        </span>
+        <input
+          name={name}
+          value={value}
+          onChange={(event) => onChange?.(event.target.value.replace(/\D/g, "").slice(0, 8))}
+          inputMode="numeric"
+          pattern="[0-9]{8}"
+          minLength={8}
+          maxLength={8}
+          required={required}
+          placeholder="12345678"
+          className="min-h-11 min-w-0 flex-1 px-3 py-2 text-base outline-none placeholder:text-slate-400"
+        />
+      </div>
+    </Field>
+  );
+}
+
+function ContactStep({
+  title,
+  name,
+  defaultRelationship,
+  phone,
+  setPhone,
+  required,
+}: {
+  title: string;
+  name: "contact" | "contact2";
+  defaultRelationship: "MOTHER" | "FATHER";
+  phone: string;
+  setPhone: (value: string) => void;
+  required?: boolean;
+}) {
+  const suffix = name === "contact" ? "" : "2";
+  return (
+    <section className="grid gap-4">
+      <SectionTitle icon={<Contact aria-hidden className="h-4 w-4" />} title={title} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Nombre">
+          <Input name={`${name}Name`} required={required} placeholder="Nombre del contacto" />
+        </Field>
+        <PhoneInput label="Telefono" name={`${name}PhoneLocal`} required={required} value={phone} onChange={setPhone} />
+        <Field label="Relacion">
+          <Select name={`${name}RelationshipCode`} defaultValue={defaultRelationship} required={required}>
+            {relationshipOptions.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <CheckboxField name={`${name}CallEnabled`} label="Permitir llamada" defaultChecked />
+        <CheckboxField name={`${name}WhatsappEnabled`} label="Permitir WhatsApp" defaultChecked />
+      </div>
+      <input type="hidden" name={`${name}Priority`} value={suffix || "1"} />
+    </section>
+  );
+}
+
+function Toggle({
+  name,
+  label,
+  checked,
+  onChange,
+}: {
+  name: string;
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex items-start gap-3 rounded-md border border-[var(--brand-border)] bg-white p-3 text-sm text-[var(--brand-text)]">
+      <input
+        name={name}
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-1 h-4 w-4 rounded border-[var(--brand-border)] text-[var(--brand-primary-dark)] focus:ring-[var(--brand-primary-light)]"
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+function extractPublicCode(value: string) {
+  const trimmed = value.trim();
+  const fromPath = trimmed.match(/\/(?:p|activate)\/([A-Za-z0-9]{4,12})/);
+  if (fromPath?.[1]) return fromPath[1].toUpperCase();
+  const plain = trimmed.match(/\b([A-Za-z]{3}\d{3,9}|[A-Za-z0-9]{4,12})\b/);
+  return plain?.[1]?.toUpperCase() ?? null;
 }

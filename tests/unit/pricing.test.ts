@@ -47,7 +47,8 @@ describe("pricing HelPlis", () => {
     expect(formatCLP(28_000)).toBe("$28.000");
     expect(message).toContain("Pack 2 HelPlis");
     expect(message).toContain("$28.000");
-    expect(message).toContain("envío se paga aparte");
+    expect(message).toContain("Quiero coordinar la compra");
+    expect(message).not.toMatch(/env[ií]o/i);
     expect(message).not.toContain("@");
   });
 });

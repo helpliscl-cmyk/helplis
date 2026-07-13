@@ -144,7 +144,7 @@ export function PurchaseIntentForm({
               <span className="font-medium text-[var(--brand-text)]">Compra:</span> única
             </p>
             <p>
-              <span className="font-medium text-[var(--brand-text)]">Envío:</span> se informa por separado
+              <span className="font-medium text-[var(--brand-text)]">Envio:</span> se coordina al cierre
             </p>
           </div>
           {savings > 0 ? (

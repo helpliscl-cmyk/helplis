@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "HelPlis",
-    description: "Identificación simple y actualizable mediante QR y NFC para personas, mascotas y objetos.",
+    description: HOME_SEO.description,
     url: "https://helplis.cl",
     siteName: "HelPlis",
     locale: "es_CL",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "HelPlis",
-    description: "QR y NFC para ayudar a reencontrar personas, mascotas y objetos.",
+    description: HOME_SEO.description,
     images: ["/brand/optimized/helplis-og-image.jpg"],
   },
   icons: {

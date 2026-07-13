@@ -4,11 +4,8 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
-  BadgeInfo,
   HeartPulse,
   MapPin,
-  PackageSearch,
-  PawPrint,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
@@ -121,8 +118,16 @@ export default async function PublicProfilePage({
               allowFoundReport={result.profile.allowFoundReport}
             />
 
-            {urgentItems.length ? (
-              <PublicSection icon={<HeartPulse aria-hidden className="h-4 w-4" />} title="Informacion critica autorizada">
+            {result.profile.criticalInformation ? (
+              <PublicSection icon={<HeartPulse aria-hidden className="h-4 w-4" />} title="Informacion importante">
+                <p className="rounded-md border border-[#b9ece8] bg-[#f8fbfe] p-3 text-sm leading-6 text-[var(--brand-muted)]">
+                  {result.profile.criticalInformation}
+                </p>
+              </PublicSection>
+            ) : null}
+
+            {!result.profile.criticalInformation && urgentItems.length ? (
+              <PublicSection icon={<HeartPulse aria-hidden className="h-4 w-4" />} title="Informacion importante">
                 <InfoList items={urgentItems} />
               </PublicSection>
             ) : null}
@@ -152,7 +157,7 @@ export default async function PublicProfilePage({
             ) : null}
 
             {additionalItems.length ? (
-              <PublicSection icon={sectionIcon(result.profile.type)} title="Informacion adicional">
+              <PublicSection icon={<MapPin aria-hidden className="h-4 w-4" />} title="Informacion adicional">
                 <InfoList items={additionalItems} />
               </PublicSection>
             ) : null}
@@ -258,6 +263,7 @@ function InfoList({ items }: { items: Array<{ label: string; value: string }> })
 }
 
 function buildUrgentItems(profile: {
+  criticalInformation: string | null;
   bloodType: string | null;
   allergies: string | null;
   medicalConditions: string | null;
@@ -282,24 +288,10 @@ function buildUrgentItems(profile: {
 }
 
 function buildAdditionalItems(profile: {
-  type: string;
   age: number | null;
   commune: string | null;
   generalArea: string | null;
   exactAddress: string | null;
-  species: string | null;
-  breed: string | null;
-  color: string | null;
-  sex: string | null;
-  veterinaryNotes: string | null;
-  microchipNumberOptional: string | null;
-  petBehaviorNotes: string | null;
-  objectCategory: string | null;
-  brand: string | null;
-  model: string | null;
-  objectDescription: string | null;
-  rewardMessage: string | null;
-  returnInstructions: string | null;
   description: string | null;
 }) {
   return [
@@ -307,29 +299,6 @@ function buildAdditionalItems(profile: {
     { label: "Comuna", value: profile.commune },
     { label: "Sector", value: profile.generalArea },
     { label: "Direccion autorizada", value: profile.exactAddress },
-    { label: "Especie", value: profile.species },
-    { label: "Raza", value: profile.breed },
-    { label: "Color", value: profile.color },
-    { label: "Sexo", value: profile.sex },
-    { label: "Veterinaria", value: profile.veterinaryNotes },
-    { label: "Microchip", value: profile.microchipNumberOptional },
-    { label: "Comportamiento", value: profile.petBehaviorNotes },
-    { label: "Categoria", value: profile.objectCategory },
-    { label: "Marca", value: profile.brand },
-    { label: "Modelo", value: profile.model },
-    { label: "Descripcion", value: profile.objectDescription ?? profile.description },
-    { label: "Recompensa", value: profile.rewardMessage },
-    { label: "Devolucion", value: profile.returnInstructions },
+    { label: "Descripcion", value: profile.description },
   ].filter((item): item is { label: string; value: string } => Boolean(item.value));
-}
-
-function sectionIcon(type: string) {
-  if (type === "PET") return <PawPrint aria-hidden className="h-4 w-4" />;
-  if (type === "LUGGAGE" || type === "OBJECT" || type === "ASSET") {
-    return <PackageSearch aria-hidden className="h-4 w-4" />;
-  }
-  if (type === "PERSON" || type === "CHILD" || type === "SENIOR" || type === "DEPENDENT_PERSON") {
-    return <MapPin aria-hidden className="h-4 w-4" />;
-  }
-  return <BadgeInfo aria-hidden className="h-4 w-4" />;
 }
