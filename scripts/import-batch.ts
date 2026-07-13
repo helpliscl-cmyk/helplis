@@ -49,6 +49,8 @@ async function main() {
         data: {
           publicCode,
           publicUrl,
+          qrContent: publicUrl,
+          nfcContent: publicUrl,
           nfcUid,
           productType,
           status: "AVAILABLE",

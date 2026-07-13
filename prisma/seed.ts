@@ -526,11 +526,14 @@ async function main() {
 
   const devices = [];
   for (const spec of deviceSpecs) {
+    const publicUrl = buildPublicUrl(spec.code);
     devices.push(
       await prisma.device.create({
         data: {
           publicCode: spec.code,
-          publicUrl: buildPublicUrl(spec.code),
+          publicUrl,
+          qrContent: publicUrl,
+          nfcContent: publicUrl,
           nfcUid: `04:DE:MO:${spec.code.slice(-3)}`,
           activationCodeHash: await hashActivationCode(demoActivationCodes[spec.code]),
           activationCodeUsedAt:

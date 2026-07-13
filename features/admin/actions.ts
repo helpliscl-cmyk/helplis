@@ -33,10 +33,13 @@ export async function createBatchAction(formData: FormData) {
       return Boolean(existing);
     });
     const activationCode = generateActivationCode();
+    const publicUrl = buildPublicUrl(publicCode);
     await prisma.device.create({
       data: {
         publicCode,
-        publicUrl: buildPublicUrl(publicCode),
+        publicUrl,
+        qrContent: publicUrl,
+        nfcContent: publicUrl,
         activationCodeHash: await hashActivationCode(activationCode),
         batchId: batch.id,
         productType,
@@ -187,6 +190,8 @@ export async function importCsvAction(formData: FormData) {
         data: {
           publicCode,
           publicUrl: publicUrlRaw,
+          qrContent: publicUrlRaw,
+          nfcContent: publicUrlRaw,
           nfcUid,
           productType,
           batchId,

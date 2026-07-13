@@ -29,7 +29,7 @@ export function buildPublicUrl(publicCode: string, baseUrl = PUBLIC_BASE_URL) {
 export function isAllowedPublicUrl(url: string) {
   try {
     const parsed = new URL(url);
-    return parsed.hostname === "helplis.cl" && parsed.pathname.startsWith("/p/");
+    return parsed.hostname === "helplis.cl" && /^\/p\/[A-Z0-9]{4,12}$/.test(parsed.pathname);
   } catch {
     return false;
   }

@@ -24,17 +24,20 @@ async function main() {
       Boolean(await prisma.device.findUnique({ where: { publicCode: code } })),
     );
     const activationCode = generateActivationCode();
+    const publicUrl = buildPublicUrl(publicCode);
     await prisma.device.create({
       data: {
         publicCode,
-        publicUrl: buildPublicUrl(publicCode),
+        publicUrl,
+        qrContent: publicUrl,
+        nfcContent: publicUrl,
         activationCodeHash: await hashActivationCode(activationCode),
         batchId: batch.id,
         productType,
         status: "AVAILABLE",
       },
     });
-    exportRows.push(`${publicCode},${buildPublicUrl(publicCode)},${activationCode},${productType}`);
+    exportRows.push(`${publicCode},${publicUrl},${activationCode},${productType}`);
   }
 
   console.log(`Lote ${batch.internalReference} generado.`);
