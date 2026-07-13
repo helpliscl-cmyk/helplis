@@ -1,7 +1,17 @@
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, HeartPulse, Info, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BadgeInfo,
+  HeartPulse,
+  MapPin,
+  PackageSearch,
+  PawPrint,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import { BrandMark } from "@/components/brand/brand-logo";
 import { Badge, statusTone } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
@@ -28,16 +38,16 @@ export default async function PublicProfilePage({
   });
 
   if (result.status === "INVALID_CODE") {
-    return <PublicState title="Código no válido" description="No encontramos una ficha pública para este código." />;
+    return <PublicState title="Codigo no valido" description="No encontramos una ficha publica para este codigo." />;
   }
 
   if (result.status === "NOT_ACTIVATED") {
     return (
       <PublicState
-        title="Esta pulsera todavía no ha sido activada."
-        description="El código público no basta para apropiarse de un dispositivo. Para activarlo se requiere el código secreto incluido en el empaque."
+        title="Esta pulsera todavia no ha sido activada."
+        description="El codigo publico no basta para apropiarse de un dispositivo. Para activarlo se requiere el codigo secreto incluido en el empaque."
         actionHref={`/activate/${result.publicCode}`}
-        actionLabel="Iniciar activación"
+        actionLabel="Iniciar activacion"
       />
     );
   }
@@ -46,7 +56,7 @@ export default async function PublicProfilePage({
     return (
       <PublicState
         title="Ficha no disponible"
-        description={`El dispositivo está en estado ${result.deviceStatus}. Contacta soporte si necesitas ayuda.`}
+        description={`El dispositivo esta en estado ${result.deviceStatus}. Contacta soporte si necesitas ayuda.`}
         actionHref="/support"
         actionLabel="Contactar soporte"
       />
@@ -55,103 +65,111 @@ export default async function PublicProfilePage({
 
   const statusCopy =
     result.status === "LOST"
-      ? "Este elemento fue marcado como perdido."
+      ? "Modo perdido"
       : result.status === "FOUND"
-        ? "Este elemento fue marcado como encontrado."
-        : "Ficha activa.";
+        ? "Marcado como encontrado"
+        : "Ficha activa";
+  const urgentItems = buildUrgentItems(result.profile);
+  const additionalItems = buildAdditionalItems(result.profile);
 
   return (
-    <main className="min-h-screen bg-[var(--brand-background)] px-4 py-5">
-      <div className="mx-auto grid max-w-xl gap-4">
+    <main className="min-h-screen bg-[var(--brand-background)] px-4 py-5 text-[var(--brand-text)]">
+      <div className="mx-auto grid max-w-2xl gap-4">
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-[var(--brand-muted)]">
           <ArrowLeft aria-hidden className="h-4 w-4" />
           Volver
         </Link>
 
-        <Card className="grid gap-5 p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+        <article className="overflow-hidden rounded-md border border-[var(--brand-border)] bg-white shadow-sm">
+          <header className="grid gap-5 bg-[#f8fbfe] p-5">
+            <div className="flex items-start justify-between gap-3">
               <Badge tone={statusTone(result.deviceStatus)}>{statusCopy}</Badge>
-              <h1 className="mt-3 text-3xl font-semibold leading-tight text-[var(--brand-text)]">
-                {result.profile.displayName}
-              </h1>
-              <p className="mt-1 text-sm text-[var(--brand-muted)]">
-                {result.profile.type} · {result.productType}
-              </p>
-            </div>
-            <div className="shrink-0 rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] px-3 py-2 text-sm font-semibold text-[var(--brand-primary-dark)]">
-              {result.publicCode}
-            </div>
-          </div>
-
-          {result.profile.lostMessage || result.status === "LOST" ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-              <strong>Modo perdido:</strong> {result.profile.lostMessage ?? "Contacta al responsable registrado."}
-            </div>
-          ) : null}
-
-          <InfoBlock icon={<Info aria-hidden className="h-4 w-4" />} title="Información autorizada">
-            {result.profile.description ? <p>{result.profile.description}</p> : null}
-            {result.profile.objectDescription ? <p>{result.profile.objectDescription}</p> : null}
-            {result.profile.species ? (
-              <p>
-                {result.profile.species}
-                {result.profile.breed ? ` · ${result.profile.breed}` : ""}
-                {result.profile.color ? ` · ${result.profile.color}` : ""}
-              </p>
-            ) : null}
-            {result.profile.age ? <p>Edad aproximada: {result.profile.age}</p> : null}
-            {result.profile.specialInstructions ? <p>{result.profile.specialInstructions}</p> : null}
-            {!result.profile.description &&
-            !result.profile.objectDescription &&
-            !result.profile.species &&
-            !result.profile.age &&
-            !result.profile.specialInstructions ? (
-              <p>No hay instrucciones adicionales visibles.</p>
-            ) : null}
-          </InfoBlock>
-
-          {result.profile.medicalNotes || result.profile.allergies || result.profile.medications || result.profile.bloodType ? (
-            <InfoBlock icon={<HeartPulse aria-hidden className="h-4 w-4" />} title="Información médica autorizada">
-              {result.profile.medicalNotes ? <p>{result.profile.medicalNotes}</p> : null}
-              {result.profile.allergies ? <p>Alergias: {result.profile.allergies}</p> : null}
-              {result.profile.medications ? <p>Medicamentos: {result.profile.medications}</p> : null}
-              {result.profile.bloodType ? <p>Grupo sanguíneo: {result.profile.bloodType}</p> : null}
-            </InfoBlock>
-          ) : null}
-
-          {result.contacts.length ? (
-            <InfoBlock title="Contactos visibles">
-              <div className="grid gap-2">
-                {result.contacts.map((contact) => (
-                  <div key={contact.id} className="rounded-md border border-[var(--brand-border)] bg-white p-3 text-sm">
-                    <div className="font-medium">{contact.name ?? "Contacto autorizado"}</div>
-                    {contact.relationship ? <div className="text-[var(--brand-muted)]">{contact.relationship}</div> : null}
-                    {contact.phone ? <div className="text-[var(--brand-muted)]">{contact.phone}</div> : null}
-                  </div>
-                ))}
+              <div className="rounded-md border border-[var(--brand-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--brand-primary-dark)]">
+                {result.publicCode}
               </div>
-            </InfoBlock>
-          ) : null}
-
-          <PublicActions
-            scanId={result.scanId}
-            publicCode={result.publicCode}
-            contacts={result.contacts}
-            showLocationButton={result.profile.showLocationButton}
-          />
-
-          <div className="grid gap-3 rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] p-3 text-xs leading-5 text-[var(--brand-muted)]">
-            <p>
-              <ShieldCheck aria-hidden className="mr-1 inline h-3.5 w-3.5 text-[var(--brand-accent)]" />
-              Tu ubicación solo se enviará si aceptas compartirla. HelPlis no revela la ubicación del propietario ni datos no autorizados.
-            </p>
-            <div className="flex items-center gap-2 text-[var(--brand-muted)]">
-              <BrandMark className="h-7" />
-              <span>HelPlis · Conecta. Informa. Reencuentra.</span>
             </div>
+
+            <div className="flex items-center gap-4">
+              <ProfilePhoto name={result.profile.displayName} src={result.profile.photoUrl} />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-[var(--brand-muted)]">{result.profile.typeLabel}</p>
+                <h1 className="text-3xl font-semibold leading-tight">{result.profile.displayName}</h1>
+                {result.profile.headline ? (
+                  <p className="mt-1 text-sm text-[var(--brand-muted)]">{result.profile.headline}</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className={result.status === "LOST" ? "rounded-md border border-amber-200 bg-amber-50 p-4" : ""}>
+              <p className="text-base leading-7">
+                {result.status === "LOST" && result.profile.lostMessage
+                  ? result.profile.lostMessage
+                  : result.profile.helpMessage}
+              </p>
+              {result.profile.statusMessage ? (
+                <p className="mt-2 text-sm text-[var(--brand-muted)]">{result.profile.statusMessage}</p>
+              ) : null}
+            </div>
+          </header>
+
+          <div className="grid gap-5 p-5">
+            <PublicActions
+              scanId={result.scanId}
+              publicCode={result.publicCode}
+              contacts={result.contacts}
+              showLocationButton={result.profile.showLocationButton}
+              allowFoundReport={result.profile.allowFoundReport}
+            />
+
+            {urgentItems.length ? (
+              <PublicSection icon={<HeartPulse aria-hidden className="h-4 w-4" />} title="Informacion critica autorizada">
+                <InfoList items={urgentItems} />
+              </PublicSection>
+            ) : null}
+
+            {result.contacts.length ? (
+              <PublicSection icon={<UserRound aria-hidden className="h-4 w-4" />} title="Contactos">
+                <div className="grid gap-3">
+                  {result.contacts.map((contact) => (
+                    <div key={contact.id} className="border-t border-[var(--brand-border)] pt-3 first:border-t-0 first:pt-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium">{contact.name ?? `Contacto ${contact.priority}`}</p>
+                          {contact.relationship ? (
+                            <p className="text-sm text-[var(--brand-muted)]">{contact.relationship}</p>
+                          ) : null}
+                        </div>
+                        <Badge>#{contact.priority}</Badge>
+                      </div>
+                      {contact.availabilityNotes ? (
+                        <p className="mt-2 text-sm text-[var(--brand-muted)]">{contact.availabilityNotes}</p>
+                      ) : null}
+                      {contact.phone ? <p className="mt-2 text-sm text-[var(--brand-muted)]">{contact.phone}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              </PublicSection>
+            ) : null}
+
+            {additionalItems.length ? (
+              <PublicSection icon={sectionIcon(result.profile.type)} title="Informacion adicional">
+                <InfoList items={additionalItems} />
+              </PublicSection>
+            ) : null}
+
+            <section className="grid gap-3 rounded-md bg-[#f8fbfe] p-4 text-xs leading-5 text-[var(--brand-muted)]">
+              <p>
+                <ShieldCheck aria-hidden className="mr-1 inline h-3.5 w-3.5 text-[var(--brand-accent)]" />
+                Solo se muestra informacion autorizada por el responsable de este HelPlis.
+              </p>
+              <p>La ubicacion del responsable nunca se muestra. Tu ubicacion solo se envia si decides compartirla.</p>
+              <div className="flex items-center gap-2">
+                <BrandMark className="h-7" />
+                <span>HelPlis - Conecta. Informa. Reencuentra.</span>
+              </div>
+            </section>
           </div>
-        </Card>
+        </article>
       </div>
     </main>
   );
@@ -183,7 +201,7 @@ function PublicState({
             Soporte
           </ButtonLink>
           <p className="text-xs text-[var(--brand-muted)]">
-            {OFFICIAL_CONTACT.email} · {OFFICIAL_CONTACT.phoneDisplay}
+            {OFFICIAL_CONTACT.email} - {OFFICIAL_CONTACT.phoneDisplay}
           </p>
         </div>
       </Card>
@@ -191,22 +209,127 @@ function PublicState({
   );
 }
 
-function InfoBlock({
+function ProfilePhoto({ name, src }: { name: string; src: string | null }) {
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt="" className="h-20 w-20 shrink-0 rounded-full border border-[var(--brand-border)] object-cover" />
+    );
+  }
+
+  return (
+    <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-[var(--brand-primary)] text-2xl font-semibold text-white">
+      {name.slice(0, 1).toUpperCase()}
+    </div>
+  );
+}
+
+function PublicSection({
   title,
   icon,
   children,
 }: {
   title: string;
-  icon?: ReactNode;
+  icon: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-[var(--brand-border)] bg-[#f8fbfe] p-3">
-      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-text)]">
+    <section className="border-t border-[var(--brand-border)] pt-5">
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
         {icon}
         {title}
       </h2>
-      <div className="grid gap-1 text-sm leading-6 text-[var(--brand-muted)]">{children}</div>
+      {children}
     </section>
   );
+}
+
+function InfoList({ items }: { items: Array<{ label: string; value: string }> }) {
+  return (
+    <dl className="grid gap-3 text-sm">
+      {items.map((item) => (
+        <div key={item.label} className="grid gap-1">
+          <dt className="font-medium text-[var(--brand-text)]">{item.label}</dt>
+          <dd className="leading-6 text-[var(--brand-muted)]">{item.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function buildUrgentItems(profile: {
+  bloodType: string | null;
+  allergies: string | null;
+  medicalConditions: string | null;
+  medications: string | null;
+  medicalInstructions: string | null;
+  emergencyInstructions: string | null;
+  communicationNotes: string | null;
+  mobilityNotes: string | null;
+  sensoryNotes: string | null;
+}) {
+  return [
+    { label: "Grupo sanguineo", value: profile.bloodType },
+    { label: "Alergias", value: profile.allergies },
+    { label: "Condiciones", value: profile.medicalConditions },
+    { label: "Medicamentos", value: profile.medications },
+    { label: "Instrucciones medicas", value: profile.medicalInstructions },
+    { label: "Emergencia", value: profile.emergencyInstructions },
+    { label: "Comunicacion", value: profile.communicationNotes },
+    { label: "Movilidad", value: profile.mobilityNotes },
+    { label: "Sensorial", value: profile.sensoryNotes },
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
+}
+
+function buildAdditionalItems(profile: {
+  type: string;
+  age: number | null;
+  commune: string | null;
+  generalArea: string | null;
+  exactAddress: string | null;
+  species: string | null;
+  breed: string | null;
+  color: string | null;
+  sex: string | null;
+  veterinaryNotes: string | null;
+  microchipNumberOptional: string | null;
+  petBehaviorNotes: string | null;
+  objectCategory: string | null;
+  brand: string | null;
+  model: string | null;
+  objectDescription: string | null;
+  rewardMessage: string | null;
+  returnInstructions: string | null;
+  description: string | null;
+}) {
+  return [
+    { label: "Edad aproximada", value: profile.age ? `${profile.age} anos` : null },
+    { label: "Comuna", value: profile.commune },
+    { label: "Sector", value: profile.generalArea },
+    { label: "Direccion autorizada", value: profile.exactAddress },
+    { label: "Especie", value: profile.species },
+    { label: "Raza", value: profile.breed },
+    { label: "Color", value: profile.color },
+    { label: "Sexo", value: profile.sex },
+    { label: "Veterinaria", value: profile.veterinaryNotes },
+    { label: "Microchip", value: profile.microchipNumberOptional },
+    { label: "Comportamiento", value: profile.petBehaviorNotes },
+    { label: "Categoria", value: profile.objectCategory },
+    { label: "Marca", value: profile.brand },
+    { label: "Modelo", value: profile.model },
+    { label: "Descripcion", value: profile.objectDescription ?? profile.description },
+    { label: "Recompensa", value: profile.rewardMessage },
+    { label: "Devolucion", value: profile.returnInstructions },
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
+}
+
+function sectionIcon(type: string) {
+  if (type === "PET") return <PawPrint aria-hidden className="h-4 w-4" />;
+  if (type === "LUGGAGE" || type === "OBJECT" || type === "ASSET") {
+    return <PackageSearch aria-hidden className="h-4 w-4" />;
+  }
+  if (type === "PERSON" || type === "CHILD" || type === "SENIOR" || type === "DEPENDENT_PERSON") {
+    return <MapPin aria-hidden className="h-4 w-4" />;
+  }
+  return <BadgeInfo aria-hidden className="h-4 w-4" />;
 }

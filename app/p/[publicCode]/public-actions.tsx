@@ -25,11 +25,13 @@ export function PublicActions({
   publicCode,
   contacts,
   showLocationButton,
+  allowFoundReport,
 }: {
   scanId: string;
   publicCode: string;
   contacts: Contact[];
   showLocationButton: boolean;
+  allowFoundReport: boolean;
 }) {
   const [status, setStatus] = useState<string | null>(null);
   const firstCallable = contacts.find((contact) => contact.phoneForAction && contact.callEnabled);
@@ -111,10 +113,12 @@ export function PublicActions({
           Compartir mi ubicación con el responsable
         </Button>
       ) : null}
-      <Button type="button" variant="secondary" onClick={markFound}>
-        <MapPinCheck aria-hidden className="h-4 w-4" />
-        Reportar encontrado
-      </Button>
+      {allowFoundReport ? (
+        <Button type="button" variant="secondary" onClick={markFound}>
+          <MapPinCheck aria-hidden className="h-4 w-4" />
+          Reportar encontrado
+        </Button>
+      ) : null}
       <Button type="button" variant="secondary" onClick={copyLink}>
         <Copy aria-hidden className="h-4 w-4" />
         Copiar enlace
