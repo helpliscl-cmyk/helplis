@@ -4,6 +4,7 @@ import {
   escapeCsvCell,
   manufacturerInstructionsEn,
   rowsToCsv,
+  rowsToSupplierReturnTemplateCsv,
   rowsToWorkbookBuffer,
   type ProductionExportRow,
 } from "@/server/operations/manufacturer-export";
@@ -32,11 +33,19 @@ describe("manufacturer export package", () => {
     expect(csv).not.toContain("activation");
   });
 
+  it("exports supplier return template with empty UID cells", () => {
+    const csv = rowsToSupplierReturnTemplateCsv([row]);
+    expect(csv).toContain("NFC UID");
+    expect(csv.trim().split("\n")).toHaveLength(2);
+    expect(csv.split("\n")[1]).toContain(',"","","","');
+  });
+
   it("keeps supplier instructions explicit about UID and URLs", () => {
     const instructions = manufacturerInstructionsEn();
     expect(instructions).toContain("same public URL");
     expect(instructions).toContain("NFC UID");
-    expect(instructions).toContain("does not include activation codes");
+    expect(instructions).toContain("contains no private owner data");
+    expect(instructions).not.toContain("activationCode");
   });
 
   it("creates a minimal XLSX workbook with two sheets", async () => {

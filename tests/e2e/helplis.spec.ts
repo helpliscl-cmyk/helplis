@@ -247,6 +247,13 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByRole("heading", { name: "SAMPLE-HELPLIS-001" })).toBeVisible();
   await expect(page.locator("tbody tr")).toHaveCount(5);
   await expect(page.locator("tbody tr").first()).toContainText("https://helplis.cl/p/");
+  for (let index = 0; index < 5; index += 1) {
+    const row = page.locator("tbody tr").nth(index);
+    const publicUrl = await row.locator("td").nth(2).innerText();
+    await expect(row.locator("td").nth(3)).toHaveText(publicUrl);
+    await expect(row.locator("td").nth(4)).toHaveText(publicUrl);
+    await expect(row.locator("td").nth(5)).toHaveText("UNACTIVATED");
+  }
   await expect(page.getByRole("button", { name: "Confirmar lote real" })).toBeVisible();
   await page.getByRole("link", { name: "Cancelar" }).click();
   await expect(page.getByRole("heading", { name: "Produccion" })).toBeVisible();

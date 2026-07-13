@@ -1,13 +1,25 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BatchStatus } from "@prisma/client";
+import { BatchStatus, ProductionFileType } from "@prisma/client";
 import { Badge, statusTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
-import { generateProductionCodesAction, updateProductionBatchAction } from "@/features/production/actions";
+import {
+  generateProductionCodesAction,
+  recordSupplierEvidenceAction,
+  updateProductionBatchAction,
+} from "@/features/production/actions";
 import { formatDate } from "@/lib/formatting/format";
 import { prisma } from "@/server/db/client";
+
+const supplierEvidenceOptions = [
+  { value: ProductionFileType.SUPPLIER_QUOTE, label: "Cotizacion" },
+  { value: ProductionFileType.SUPPLIER_MOCKUP, label: "Mockup" },
+  { value: ProductionFileType.SUPPLIER_PHOTO, label: "Fotos proveedor" },
+  { value: ProductionFileType.SUPPLIER_VIDEO, label: "Video proveedor" },
+  { value: ProductionFileType.SUPPLIER_EXCEL, label: "Excel proveedor" },
+];
 
 function Metric({ label, value }: { label: string; value: number | string }) {
   return (
@@ -68,6 +80,9 @@ export default async function ProductionBatchDetailPage({ params }: { params: Pr
   const available = await prisma.device.count({
     where: { batchId: batch.id, inventoryStatus: "AVAILABLE" },
   });
+  const supplierEvidence = batch.productionFiles.filter((file) =>
+    supplierEvidenceOptions.some((option) => option.value === file.type),
+  );
 
   return (
     <div className="grid gap-5">
@@ -165,6 +180,77 @@ export default async function ProductionBatchDetailPage({ params }: { params: Pr
             Guardar cambios
           </Button>
         </form>
+      </Card>
+
+      <Card className="grid gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">Registro proveedor</h2>
+          <p className="text-sm text-neutral-600">Cotizacion, mockup, fotos, video y Excel quedan con checksum y auditoria.</p>
+        </div>
+        <form action={recordSupplierEvidenceAction} className="grid gap-4">
+          <input type="hidden" name="batchId" value={batch.id} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Tipo de registro">
+              <Select name="type" defaultValue={ProductionFileType.SUPPLIER_QUOTE}>
+                {supplierEvidenceOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Archivo">
+              <Input
+                name="file"
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.mp4,.mov,.xlsx,.xls,.csv,application/pdf,image/*,video/*,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                required
+              />
+            </Field>
+          </div>
+          <Field label="Notas">
+            <Textarea name="notes" placeholder="Referencia, version, comentarios o aprobacion asociada." />
+          </Field>
+          <Button type="submit" variant="secondary">
+            Registrar archivo proveedor
+          </Button>
+        </form>
+        {supplierEvidence.length ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-[760px] text-left text-sm">
+              <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
+                <tr>
+                  <th className="px-4 py-3">Tipo</th>
+                  <th className="px-4 py-3">Archivo</th>
+                  <th className="px-4 py-3">Checksum</th>
+                  <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3">Fecha</th>
+                  <th className="px-4 py-3">Descarga</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {supplierEvidence.map((file) => (
+                  <tr key={file.id}>
+                    <td className="px-4 py-3">{file.type}</td>
+                    <td className="px-4 py-3 font-medium">{file.filename}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{file.checksum.slice(0, 16)}...</td>
+                    <td className="px-4 py-3">
+                      <Badge tone={statusTone(file.status)}>{file.status}</Badge>
+                    </td>
+                    <td className="px-4 py-3">{formatDate(file.generatedAt)}</td>
+                    <td className="px-4 py-3">
+                      <Link className="text-[var(--brand-primary-dark)] underline-offset-4 hover:underline" href={`/api/admin/production-files/${file.id}`}>
+                        Descargar
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-neutral-600">Aun no hay registros proveedor cargados.</p>
+        )}
       </Card>
 
       <Card>

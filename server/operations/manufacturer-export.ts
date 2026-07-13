@@ -54,6 +54,28 @@ export function rowsToCsv(rows: ProductionExportRow[], columns: readonly (keyof 
   ].join("\n");
 }
 
+export function rowsToSupplierReturnTemplateCsv(rows: ProductionExportRow[]) {
+  const header = [
+    "Wristband Reference",
+    "Public Code",
+    "Public URL",
+    "NFC UID",
+    "QR Test Result",
+    "NFC Test Result",
+    "Notes",
+  ];
+  const body = rows.map((row) => [
+    row.wristband_reference,
+    row.public_code,
+    row.public_url,
+    "",
+    "",
+    "",
+    "",
+  ]);
+  return [header, ...body].map((row) => row.map((cell) => escapeCsvCell(cell)).join(",")).join("\n");
+}
+
 export function sha256(data: Buffer | string) {
   return crypto.createHash("sha256").update(data).digest("hex");
 }
@@ -107,7 +129,7 @@ export function manufacturerInstructionsEn() {
     "Do not change, shorten, redirect or rewrite the URLs.",
     "Report any defective, missing or mismatched unit immediately.",
     "",
-    "The standard supplier package intentionally does not include activation codes.",
+    "The supplier package intentionally contains no private owner data or secret owner credentials.",
   ].join("\n");
 }
 
@@ -135,7 +157,7 @@ export function buildBatchSummary(input: {
     domain: input.domain,
     productionMode: input.productionMode,
     generatedAt: new Date().toISOString(),
-    activationCodeIncluded: false,
+    secretCredentialsIncluded: false,
   };
 }
 
@@ -234,7 +256,12 @@ export async function rowsToWorkbookBuffer(rows: ProductionExportRow[]) {
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }
 
-async function addQrAssets(zip: JSZip, rows: ProductionExportRow[], kind: "png" | "svg") {
+async function addQrAssets(
+  zip: JSZip,
+  rows: ProductionExportRow[],
+  kind: "png" | "svg",
+  onFile?: (filename: string, data: Buffer | string) => void,
+) {
   const folder = zip.folder(kind === "png" ? "qr-png" : "qr-svg");
   if (!folder) throw new Error("Could not create QR folder.");
 
@@ -242,10 +269,14 @@ async function addQrAssets(zip: JSZip, rows: ProductionExportRow[], kind: "png" 
     const baseName = row.qr_filename.replace(/\.png$/i, "");
     if (kind === "png") {
       const png = await QRCode.toBuffer(row.qr_content, { type: "png", margin: 1, width: 512 });
+      const filename = `${kind === "png" ? "qr-png" : "qr-svg"}/${baseName}.png`;
       folder.file(`${baseName}.png`, png);
+      onFile?.(filename, png);
     } else {
       const svg = await QRCode.toString(row.qr_content, { type: "svg", margin: 1, width: 512 });
+      const filename = `qr-svg/${baseName}.svg`;
       folder.file(`${baseName}.svg`, svg);
+      onFile?.(filename, svg);
     }
   }
 }
@@ -269,19 +300,22 @@ async function buildArtifact(format: ManufacturerExportFormat, rows: ProductionE
   const workbook = await rowsToWorkbookBuffer(rows);
   const instructions = manufacturerInstructionsEn();
   const summary = JSON.stringify(buildBatchSummary(batch), null, 2);
+  const supplierReturn = rowsToSupplierReturnTemplateCsv(rows);
   const checksums: string[] = [];
 
-  zip.file("production-data.csv", csv);
-  checksums.push(`production-data.csv  ${sha256(csv)}`);
-  zip.file("production-data.xlsx", workbook);
-  checksums.push(`production-data.xlsx  ${sha256(workbook)}`);
-  zip.file("instructions-en.txt", instructions);
-  checksums.push(`instructions-en.txt  ${sha256(instructions)}`);
-  zip.file("batch-summary.json", summary);
-  checksums.push(`batch-summary.json  ${sha256(summary)}`);
-  await addQrAssets(zip, rows, "png");
-  await addQrAssets(zip, rows, "svg");
-  zip.file("checksums.txt", checksums.join("\n"));
+  const addChecksummedFile = (filename: string, data: Buffer | string) => {
+    zip.file(filename, data);
+    checksums.push(`${sha256(data)}  ${filename}`);
+  };
+
+  addChecksummedFile("production-data.csv", csv);
+  addChecksummedFile("production-data.xlsx", workbook);
+  addChecksummedFile("instructions-en.txt", instructions);
+  addChecksummedFile("batch-summary.json", summary);
+  addChecksummedFile("supplier-return-template.csv", supplierReturn);
+  await addQrAssets(zip, rows, "png", (filename, data) => checksums.push(`${sha256(data)}  ${filename}`));
+  await addQrAssets(zip, rows, "svg", (filename, data) => checksums.push(`${sha256(data)}  ${filename}`));
+  zip.file("checksums-sha256.txt", checksums.join("\n"));
 
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }

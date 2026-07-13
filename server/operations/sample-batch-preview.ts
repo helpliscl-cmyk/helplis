@@ -5,7 +5,13 @@ import { hashActivationCode } from "@/lib/security/hashing";
 import { prisma } from "@/server/db/client";
 import { buildPublicUrl, generateActivationCode, generatePublicCode } from "@/server/services/codes";
 import { encryptActivationCode } from "./activation-code-vault";
-import { rowsToWorkbookBuffer, type ProductionExportRow } from "./manufacturer-export";
+import {
+  manufacturerInstructionsEn,
+  rowsToCsv,
+  rowsToWorkbookBuffer,
+  sha256,
+  type ProductionExportRow,
+} from "./manufacturer-export";
 
 export const SAMPLE_BATCH_REFERENCE = "SAMPLE-HELPLIS-001";
 export const SAMPLE_BATCH_QUANTITY = 5;
@@ -29,6 +35,11 @@ export type SampleBatchPreview = {
   productionMode: "SAMPLE";
   exportFormat: "XLSX + QR SVG + QR PNG + supplier return template";
   units: SampleBatchPreviewUnit[];
+};
+
+type SamplePackageFile = {
+  path: string;
+  data: Buffer | string;
 };
 
 export async function buildSampleBatchPreview(): Promise<SampleBatchPreview> {
@@ -93,6 +104,14 @@ export async function buildSampleManufacturerWorkbook(units: SampleBatchPreviewU
   return rowsToWorkbookBuffer(sampleUnitsToProductionRows(units));
 }
 
+export function buildSampleProductionDataCsv(units: SampleBatchPreviewUnit[]) {
+  return rowsToCsv(sampleUnitsToProductionRows(units));
+}
+
+export function buildSampleInstructionsEnglish() {
+  return manufacturerInstructionsEn();
+}
+
 export async function buildSampleQrZip(units: SampleBatchPreviewUnit[], format: "png" | "svg") {
   const zip = new JSZip();
   for (const unit of units) {
@@ -139,11 +158,92 @@ export function buildSupplierReturnTemplateCsv(units: SampleBatchPreviewUnit[]) 
   return [header, ...rows].map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(",")).join("\n");
 }
 
+async function buildSampleQrPackageFiles(units: SampleBatchPreviewUnit[], format: "png" | "svg") {
+  const files: SamplePackageFile[] = [];
+  for (const unit of units) {
+    if (format === "png") {
+      const png = await QRCode.toBuffer(unit.qrContent, {
+        type: "png",
+        margin: 4,
+        width: 1024,
+        errorCorrectionLevel: "M",
+      });
+      files.push({ path: `qr-png/${unit.publicCode}.png`, data: png });
+    } else {
+      const svg = await QRCode.toString(unit.qrContent, {
+        type: "svg",
+        margin: 4,
+        width: 1024,
+        errorCorrectionLevel: "M",
+      });
+      files.push({ path: `qr-svg/${unit.publicCode}.svg`, data: svg });
+    }
+  }
+  return files;
+}
+
+export async function buildSampleSupplierPackageFiles(units: SampleBatchPreviewUnit[]) {
+  const csv = buildSampleProductionDataCsv(units);
+  const workbook = await buildSampleManufacturerWorkbook(units);
+  const supplierReturn = buildSupplierReturnTemplateCsv(units);
+  const instructions = buildSampleInstructionsEnglish();
+  const manifest = JSON.stringify(
+    {
+      packageReference: SAMPLE_BATCH_REFERENCE,
+      supplierName: "Emilia",
+      quantity: SAMPLE_BATCH_QUANTITY,
+      domain: SAMPLE_BATCH_DOMAIN,
+      productionMode: "SAMPLE",
+      generatedAt: new Date().toISOString(),
+      secretCredentialsIncluded: false,
+      files: [
+        "production-data.csv",
+        "production-data.xlsx",
+        "instructions-en.txt",
+        "supplier-return-template.csv",
+        "qr-png/[publicCode].png",
+        "qr-svg/[publicCode].svg",
+      ],
+    },
+    null,
+    2,
+  );
+
+  const files: SamplePackageFile[] = [
+    { path: "production-data.csv", data: csv },
+    { path: "production-data.xlsx", data: workbook },
+    { path: "instructions-en.txt", data: instructions },
+    { path: "supplier-return-template.csv", data: supplierReturn },
+    { path: "manifest.json", data: manifest },
+    ...(await buildSampleQrPackageFiles(units, "png")),
+    ...(await buildSampleQrPackageFiles(units, "svg")),
+  ];
+
+  return files;
+}
+
+export async function buildSampleChecksumsText(units: SampleBatchPreviewUnit[]) {
+  const files = await buildSampleSupplierPackageFiles(units);
+  return files.map((file) => `${sha256(file.data)}  ${file.path}`).join("\n");
+}
+
+export async function buildSampleSupplierPackageZip(units: SampleBatchPreviewUnit[]) {
+  const zip = new JSZip();
+  const files = await buildSampleSupplierPackageFiles(units);
+  for (const file of files) {
+    zip.file(file.path, file.data);
+  }
+  zip.file("checksums-sha256.txt", files.map((file) => `${sha256(file.data)}  ${file.path}`).join("\n"));
+  return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+}
+
 export async function confirmSamplePreviewBatch(input: {
   encodedUnits: string;
   actorUserId?: string;
+  confirmedIrreversible?: boolean;
 }) {
   const units = decodeSampleUnits(input.encodedUnits);
+  if (!input.confirmedIrreversible) throw new Error("Irreversible confirmation is required.");
   const existingBatch = await prisma.batch.findUnique({ where: { internalReference: SAMPLE_BATCH_REFERENCE } });
   if (existingBatch) throw new Error("Sample batch already exists.");
 

@@ -1,12 +1,15 @@
 "use server";
 
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { BatchStatus, ProductType, ProductionMode } from "@prisma/client";
+import { BatchStatus, ProductType, ProductionFileType, ProductionMode } from "@prisma/client";
 import { requireRole } from "@/lib/auth/session";
 import { prisma } from "@/server/db/client";
 import {
   generateManufacturerExportPackage,
+  sha256,
   type ManufacturerExportFormat,
 } from "@/server/operations/manufacturer-export";
 import { generateProductionCodesForBatch } from "@/server/operations/production-codes";
@@ -23,6 +26,14 @@ const manufacturerExportFormats: ManufacturerExportFormat[] = [
   "QR_SVG_ZIP",
   "FULL_PACKAGE",
 ];
+const supplierEvidenceTypes = [
+  ProductionFileType.SUPPLIER_QUOTE,
+  ProductionFileType.SUPPLIER_MOCKUP,
+  ProductionFileType.SUPPLIER_PHOTO,
+  ProductionFileType.SUPPLIER_VIDEO,
+  ProductionFileType.SUPPLIER_EXCEL,
+] as const;
+const productionRoot = path.join(process.cwd(), "data", "production");
 
 function text(formData: FormData, key: string, fallback = "") {
   return String(formData.get(key) ?? fallback).trim();
@@ -41,6 +52,17 @@ function parseEnum<T extends Record<string, string>>(values: T, raw: FormDataEnt
 function buildReference(mode: ProductionMode) {
   const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   return `${mode === "DEMO" ? "SAMPLE-DEMO" : "HLP-PROD"}-${stamp}-${Math.floor(Math.random() * 900 + 100)}`;
+}
+
+function safeReference(value: string) {
+  return value.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "batch";
+}
+
+function safeFilename(value: string) {
+  const parsed = path.parse(value || "supplier-evidence.bin");
+  const name = safeReference(parsed.name);
+  const ext = parsed.ext.replace(/[^A-Za-z0-9.]/g, "").slice(0, 12);
+  return `${name}${ext || ".bin"}`;
 }
 
 export async function createProductionBatchAction(formData: FormData) {
@@ -153,10 +175,12 @@ export async function createSampleProductionBatchAction(formData: FormData) {
 export async function confirmSamplePreviewBatchAction(formData: FormData) {
   const user = await requireRole([...adminRoles]);
   const encodedUnits = text(formData, "encodedUnits");
+  const confirmedIrreversible = ["yes", "on", "true"].includes(String(formData.get("confirmIrreversible") ?? ""));
   if (!encodedUnits) redirect("/admin/production/sample-preview?error=preview");
+  if (!confirmedIrreversible) redirect("/admin/production/sample-preview?error=confirm-required");
 
   try {
-    const batch = await confirmSamplePreviewBatch({ encodedUnits, actorUserId: user.id });
+    const batch = await confirmSamplePreviewBatch({ encodedUnits, actorUserId: user.id, confirmedIrreversible });
     revalidatePath("/admin/production");
     redirect(`/admin/production/${batch.id}?sample=confirmed`);
   } catch {
@@ -224,4 +248,68 @@ export async function recordPhysicalVerificationAction(formData: FormData) {
 
   revalidatePath(`/admin/production/${batchId}`);
   redirect(`/admin/production/${batchId}/verification?verified=${encodeURIComponent(publicCode)}`);
+}
+
+export async function recordSupplierEvidenceAction(formData: FormData) {
+  const user = await requireRole([...adminRoles]);
+  const batchId = text(formData, "batchId");
+  const requestedType = text(formData, "type") as ProductionFileType;
+  const notes = text(formData, "notes");
+  const uploaded = formData.get("file");
+
+  if (!batchId) redirect("/admin/production?error=batch");
+  if (!supplierEvidenceTypes.includes(requestedType as (typeof supplierEvidenceTypes)[number])) {
+    redirect(`/admin/production/${batchId}?evidence=type`);
+  }
+  if (!(uploaded instanceof File) || uploaded.size <= 0) {
+    redirect(`/admin/production/${batchId}?evidence=file`);
+  }
+
+  const batch = await prisma.batch.findUnique({ where: { id: batchId } });
+  if (!batch) redirect("/admin/production?error=batch");
+
+  const buffer = Buffer.from(await uploaded.arrayBuffer());
+  const filename = `${Date.now()}-${safeFilename(uploaded.name)}`;
+  const directory = path.join(productionRoot, safeReference(batch.internalReference), "supplier-evidence");
+  await mkdir(directory, { recursive: true });
+  const storagePath = path.join(directory, filename);
+  await writeFile(storagePath, buffer);
+
+  const productionFile = await prisma.productionFile.create({
+    data: {
+      batchId,
+      type: requestedType,
+      filename,
+      storagePath,
+      checksum: sha256(buffer),
+      generatedBy: user.id,
+      status: "READY",
+      metadata: JSON.stringify({
+        originalName: uploaded.name,
+        contentType: uploaded.type || "application/octet-stream",
+        sizeBytes: uploaded.size,
+        notes,
+        source: "supplier",
+      }),
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: user.id,
+      action: "SUPPLIER_EVIDENCE_RECORDED",
+      entityType: "ProductionFile",
+      entityId: productionFile.id,
+      newData: JSON.stringify({
+        batchId,
+        type: requestedType,
+        filename,
+        checksum: productionFile.checksum,
+        notes,
+      }),
+    },
+  });
+
+  revalidatePath(`/admin/production/${batchId}`);
+  redirect(`/admin/production/${batchId}?evidence=recorded`);
 }

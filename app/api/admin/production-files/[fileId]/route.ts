@@ -15,7 +15,7 @@ function contentType(filename: string) {
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ fileId: string }> }) {
-  await requireRole(["ADMIN", "SUPER_ADMIN", "SUPPORT"]);
+  const user = await requireRole(["ADMIN", "SUPER_ADMIN", "SUPPORT"]);
   const { fileId } = await params;
   const file = await prisma.productionFile.findUnique({ where: { id: fileId } });
   if (!file) return NextResponse.json({ error: "Archivo no encontrado" }, { status: 404 });
@@ -28,6 +28,20 @@ export async function GET(_: Request, { params }: { params: Promise<{ fileId: st
 
   const data = await readFile(resolvedPath);
   await prisma.productionFile.update({ where: { id: file.id }, data: { status: "DOWNLOADED" } });
+  await prisma.auditLog.create({
+    data: {
+      actorUserId: user.id,
+      action: "PRODUCTION_FILE_DOWNLOADED",
+      entityType: "ProductionFile",
+      entityId: file.id,
+      newData: JSON.stringify({
+        batchId: file.batchId,
+        filename: file.filename,
+        type: file.type,
+        checksum: file.checksum,
+      }),
+    },
+  });
 
   return new NextResponse(data, {
     headers: {
