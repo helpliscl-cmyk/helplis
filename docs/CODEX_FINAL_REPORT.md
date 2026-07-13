@@ -86,7 +86,8 @@ Supabase remoto:
 Cierre productivo local:
 
 - Suite completa y build final ejecutados en `main`.
-- `package-lock.json` quedo normalizado por `npm install` con Node `v22.16.0` y npm `11.6.1`.
+- `package-lock.json` se regenero con `npm@10 install` para mantener compatibilidad con GitHub Actions.
+- Se verifico `npx npm@10 ci`, que es la ruta usada por el workflow remoto.
 - La verificacion y redeploy de Vercel quedan documentados en la seccion de regularizacion de ramas.
 
 # Branch regularization - 2026-07-13
@@ -124,6 +125,8 @@ Cierre productivo local:
 - No se uso rebase, reset, force push ni eliminacion de ramas.
 - No se detectaron conflictos.
 - No se detectaron secretos ni bases locales trackeadas.
+- El primer commit documental hizo fallar CI porque el lockfile habia sido normalizado por npm `11.6.1`; GitHub Actions con npm 10 exigia entradas opcionales de `@emnapi/*`.
+- Se corrigio regenerando `package-lock.json` con `npm@10` y reproduciendo `npm@10 ci` localmente.
 
 ## Estado final actual
 
@@ -134,7 +137,11 @@ Cierre productivo local:
 
 ## Validacion final en main
 
-- `npm install`: OK; actualizo metadatos de `package-lock.json`.
+- `npm install`: OK.
+- `npx npm@10 install`: OK; corrige compatibilidad del lockfile con CI.
+- `npx npm@10 ci`: OK.
+- `npm run db:migrate`: OK.
+- `npm run db:seed`: OK.
 - `npm run typecheck`: OK.
 - `npm run lint`: OK.
 - `npm run test`: OK, 11 archivos y 52 tests.

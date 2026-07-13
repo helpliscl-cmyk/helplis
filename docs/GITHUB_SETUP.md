@@ -51,7 +51,12 @@ Estado despues de integrar:
 
 Validacion posterior:
 
-- `npm install`: OK; normalizo `package-lock.json`.
+- `npm install`: OK.
+- Primer push documental `1c978c3`: CI remoto fallo en `verify`.
+- Causa reproducida localmente: `npx npm@10 ci` fallaba por lockfile generado con npm 11 sin entradas opcionales `@emnapi/core` y `@emnapi/runtime`.
+- Correccion: `npx npm@10 install` y luego `npx npm@10 ci` exitoso.
+- `npm run db:migrate`: OK.
+- `npm run db:seed`: OK.
 - `npm run typecheck`: OK.
 - `npm run lint`: OK.
 - `npm run test`: OK.

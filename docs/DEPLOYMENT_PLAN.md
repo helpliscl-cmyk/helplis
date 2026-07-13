@@ -42,7 +42,11 @@ Ejecutada desde `main` despues del fast-forward de `feature/supabase-integration
 
 - Node local: `v22.16.0`
 - npm local: `11.6.1`
-- `npm install`: OK; normalizo metadatos de `package-lock.json`.
+- `npm install`: OK.
+- `npx npm@10 install`: OK; usado para regenerar `package-lock.json` compatible con GitHub Actions.
+- `npx npm@10 ci`: OK.
+- `npm run db:migrate`: OK.
+- `npm run db:seed`: OK.
 - `npm run typecheck`: OK.
 - `npm run lint`: OK.
 - `npm run test`: OK, 11 archivos y 52 tests.
@@ -71,3 +75,4 @@ Verificar:
 - `vercel project inspect` no muestra rama Git conectada ni production branch.
 - El rate limit publico sigue siendo en memoria para runtime demo.
 - La correccion de auditoria npm requiere decision de upgrade de Next/PostCSS; no se debe aplicar con `--force` sin revisar impacto.
+- Mantener el lockfile compatible con npm 10 mientras `.github/workflows/ci.yml` use `actions/setup-node@v4` con Node 22 y `npm ci`.
