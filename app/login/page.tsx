@@ -4,6 +4,7 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
+import { productionRequiresPersistentDatabase } from "@/lib/runtime/production-safety";
 
 export default async function LoginPage({
   searchParams,
@@ -11,6 +12,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const params = await searchParams;
+  const showDemoDefaults = !productionRequiresPersistentDatabase();
   return (
     <main className="brand-gradient grid min-h-screen place-items-center px-4 py-8">
       <div className="grid w-full max-w-md gap-5">
@@ -30,10 +32,22 @@ export default async function LoginPage({
           <form action="/auth/login" method="post" className="grid gap-4">
             <input type="hidden" name="next" value={params.next ?? ""} />
             <Field label="Correo">
-              <Input name="email" type="email" autoComplete="email" required defaultValue="admin@demo.helplis.cl" />
+              <Input
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                defaultValue={showDemoDefaults ? "admin@demo.helplis.cl" : ""}
+              />
             </Field>
             <Field label="Contraseña">
-              <Input name="password" type="password" autoComplete="current-password" required defaultValue="HelPlisDemo123!" />
+              <Input
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                defaultValue={showDemoDefaults ? "HelPlisDemo123!" : ""}
+              />
             </Field>
             <Button type="submit">
               <LogIn aria-hidden className="h-4 w-4" />

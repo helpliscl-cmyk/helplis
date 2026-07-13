@@ -40,7 +40,7 @@ function isAllowedMimeType(value: string): value is AllowedProfilePhotoMimeType 
 }
 
 export function profilePhotoStorageProvider() {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY ? "supabase" : "local";
+  return supabaseProjectUrl() && process.env.SUPABASE_SERVICE_ROLE_KEY ? "supabase" : "local";
 }
 
 export function buildProfilePhotoPublicUrl(profileId: string, updatedAt?: Date | null) {
@@ -194,7 +194,11 @@ function localPhotoPath(storagePath: string) {
 }
 
 function supabaseStorageBaseUrl() {
-  return `${(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "")}/storage/v1`;
+  return `${supabaseProjectUrl().replace(/\/$/, "")}/storage/v1`;
+}
+
+function supabaseProjectUrl() {
+  return process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 }
 
 function supabaseStorageHeaders(contentType?: string) {

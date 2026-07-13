@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { BatchStatus, ProductType, ProductionFileType, ProductionMode } from "@prisma/client";
 import { requireRole } from "@/lib/auth/session";
+import { assertProductionWriteSafety, isDemoModeAllowed } from "@/lib/runtime/production-safety";
 import { prisma } from "@/server/db/client";
 import {
   generateManufacturerExportPackage,
@@ -71,6 +72,10 @@ export async function createProductionBatchAction(formData: FormData) {
   const productionMode = parseEnum(ProductionMode, formData.get("productionMode"), ProductionMode.DEMO);
   const productType = parseEnum(ProductType, formData.get("productType"), ProductType.WRISTBAND);
   const internalReference = text(formData, "internalReference") || buildReference(productionMode);
+
+  if (productionMode === "DEMO" && !isDemoModeAllowed()) {
+    redirect("/admin/production/new?error=demo-blocked");
+  }
 
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 500) {
     redirect("/admin/production/new?error=quantity");
@@ -174,6 +179,7 @@ export async function createSampleProductionBatchAction(formData: FormData) {
 
 export async function confirmSamplePreviewBatchAction(formData: FormData) {
   const user = await requireRole([...adminRoles]);
+  assertProductionWriteSafety(user);
   const encodedUnits = text(formData, "encodedUnits");
   const confirmedIrreversible = ["yes", "on", "true"].includes(String(formData.get("confirmIrreversible") ?? ""));
   if (!encodedUnits) redirect("/admin/production/sample-preview?error=preview");
