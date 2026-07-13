@@ -2,30 +2,30 @@
 
 Fecha: 2026-07-13
 
-## General
+## Primera version
 
-- `type`, `displayName`, `alias`, `photoUrl`, `headline`, `helpMessage`, `description`, `statusMessage`, `preferredLanguage`, `isPublic`.
+- `displayName`
+- `showDisplayName`
+- `photoUrl`
+- `showPhoto`
+- `helpMessage`
+- `criticalInformation`
+- `showCriticalInformation`
+- `allowCall`
+- `allowWhatsApp`
+- `allowLocationSharing`
+- `allowFoundReport`
 
-## Persona
+## Contactos
 
-- `firstName`, `lastName`, `approximateAge`, `birthYear`, `genderOptional`.
-- `communicationNotes`, `mobilityNotes`, `sensoryNotes`, `cognitiveNotes`.
+Cada perfil activado inicialmente tiene dos contactos:
 
-## Medico opcional
+- `type`: `PRIMARY` o `SECONDARY`
+- `relationshipCode`: `MOTHER`, `FATHER`, `FAMILY`, `RESPONSIBLE`
+- `phone`: guardado como `+569XXXXXXXX`
+- `callEnabled`
+- `whatsappEnabled`
 
-- `bloodType`, `allergies`, `medicalConditions`, `medications`, `medicalInstructions`, `emergencyInstructions`, `organDonorOptional`, `healthProviderOptional`.
+## Campos legacy
 
-## Ubicacion o residencia
-
-- `country`, `region`, `commune`, `generalArea`, `exactAddress`.
-- `exactAddress` nunca se muestra por defecto.
-
-## Mascotas
-
-- `petName`, `species`, `breed`, `color`, `sex`, `sterilizedOptional`, `veterinaryNotes`, `microchipNumberOptional`, `petBehaviorNotes`, `rewardMessage`.
-
-## Objetos
-
-- `objectName`, `objectCategory`, `brand`, `model`, `color`, `objectDescription`, `returnInstructions`, `rewardMessage`.
-
-Mascotas y objetos no exponen campos medicos de persona aunque existan datos antiguos.
+Campos de mascotas, objetos, equipaje, activos y medicina granular pueden quedar en el modelo para compatibilidad futura, pero no se exponen en la primera version comercial.

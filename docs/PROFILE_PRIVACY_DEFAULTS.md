@@ -2,22 +2,18 @@
 
 Fecha: 2026-07-13
 
-Defaults seguros:
+Valores iniciales:
 
-- Foto: visible si existe.
-- Nombre completo: oculto.
-- Alias: visible.
-- Edad aproximada: oculta.
-- Telefonos en texto: ocultos.
-- Nombres de contactos: visibles.
-- Llamada, WhatsApp, mensaje, ubicacion voluntaria y reporte encontrado: habilitados como acciones.
-- Grupo sanguineo, alergias, condiciones, medicamentos e instrucciones medicas: ocultos hasta autorizacion granular.
-- Comunicacion, movilidad y sensorial: ocultos hasta autorizacion granular.
-- Comuna/sector y direccion exacta: ocultos por defecto.
+- `showPhoto = true`
+- `showDisplayName = true`
+- `allowCall = true`
+- `allowWhatsApp = true`
+- `allowLocationSharing = true`
+- `allowFoundReport = true`
+- `showCriticalInformation = false`
 
-Datos no requeridos:
+No se muestra telefono en texto plano.
 
-- RUT.
-- Fecha completa de nacimiento.
-- Direccion exacta.
-- Datos medicos obligatorios.
+No se pide direccion exacta en el flujo inicial.
+
+No se muestran selectores separados para alergias, medicamentos, condiciones, grupo sanguineo, movilidad o comunicacion en la primera version.

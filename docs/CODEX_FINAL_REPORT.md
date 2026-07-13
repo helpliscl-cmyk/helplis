@@ -154,3 +154,15 @@ Cierre productivo local:
 - Confirmar nuevos checks de GitHub sobre `main`.
 - Verificar produccion luego del push documental final.
 - Recomendar eliminacion de `feature/supabase-integration` solo si queda sin commits exclusivos y produccion esta estable.
+
+# People-first activation update - 2026-07-13
+
+- Primera version comercial orientada exclusivamente a personas.
+- Home y formulario comercial ocultan mascotas, objetos y equipaje.
+- `/activate` prioriza escaneo QR/NFC e ingreso manual secundario.
+- El flujo usa nueve pasos: escaneo, responsable, foto/persona, dos contactos, informacion critica, privacidad, preview y confirmacion.
+- Telefonos de responsable y contactos usan prefijo visual `+569` y ocho digitos locales.
+- Contactos iniciales exactos: prioritario y secundario, con relaciones cerradas.
+- Informacion critica se captura en un solo campo y se publica solo con `showCriticalInformation`.
+- Ficha publica muestra `Informacion importante` solo si existe y esta autorizada.
+- Tests agregados: schema de activacion people-first, privacidad critica, E2E de foto y opciones comerciales para personas.
