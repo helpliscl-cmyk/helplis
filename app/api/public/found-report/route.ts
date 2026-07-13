@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { recordFoundReport } from "@/server/services/public-profile";
+import { checkRateLimit } from "@/server/security/rate-limit";
 
 const schema = z.object({
   scanId: z.string().min(1),
@@ -19,6 +20,10 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ ok: false }, { status: 400 });
 
   const headerStore = await headers();
+  const ip = headerStore.get("x-forwarded-for") ?? "unknown";
+  if (!checkRateLimit(`public-found:${ip}:${parsed.data.scanId}`, 8, 60_000)) {
+    return NextResponse.json({ ok: false }, { status: 429 });
+  }
   await recordFoundReport({
     scanId: parsed.data.scanId,
     reporterName: parsed.data.reporterName,
@@ -28,7 +33,7 @@ export async function POST(request: Request) {
     longitude: parsed.data.longitude,
     accuracy: parsed.data.accuracy,
     consentedLocation: parsed.data.consentedLocation,
-    ip: headerStore.get("x-forwarded-for"),
+    ip,
     userAgent: headerStore.get("user-agent"),
   });
 

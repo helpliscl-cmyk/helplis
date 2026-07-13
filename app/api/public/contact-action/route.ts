@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { recordPublicContactAction } from "@/server/services/public-profile";
+import { checkRateLimit } from "@/server/security/rate-limit";
 
 const schema = z.object({
   scanId: z.string().min(1),
@@ -23,10 +24,14 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ ok: false }, { status: 400 });
 
   const headerStore = await headers();
+  const ip = headerStore.get("x-forwarded-for") ?? "unknown";
+  if (!checkRateLimit(`public-contact:${ip}:${parsed.data.scanId}`, 30, 60_000)) {
+    return NextResponse.json({ ok: false }, { status: 429 });
+  }
   await recordPublicContactAction({
     scanId: parsed.data.scanId,
     action: parsed.data.action,
-    ip: headerStore.get("x-forwarded-for"),
+    ip,
     userAgent: headerStore.get("user-agent"),
   });
 

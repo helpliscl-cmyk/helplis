@@ -3,6 +3,7 @@ import { hashIpAddress } from "@/lib/security/hashing";
 import { buildPublicProfileView, type PublicContactView, type PublicProfileView } from "@/server/profiles/public-view";
 import { prisma } from "@/server/db/client";
 import { notificationProvider } from "@/server/notifications/provider";
+import { checkRateLimit } from "@/server/security/rate-limit";
 
 export type PublicProfileResult =
   | { status: "INVALID_CODE"; publicCode: string }
@@ -34,6 +35,10 @@ export async function resolvePublicProfile({
 }): Promise<PublicProfileResult> {
   const normalizedCode = publicCode.trim().toUpperCase();
   if (!/^[A-Z0-9]{4,12}$/.test(normalizedCode)) {
+    return { status: "INVALID_CODE", publicCode: normalizedCode };
+  }
+  const ipHash = hashIpAddress(ip);
+  if (!checkRateLimit(`scan:${ipHash}:${normalizedCode}`, 60, 60_000)) {
     return { status: "INVALID_CODE", publicCode: normalizedCode };
   }
 
@@ -82,7 +87,7 @@ export async function resolvePublicProfile({
       deviceId: device.id,
       profileId: device.profileId,
       scanMethod: method,
-      ipHash: hashIpAddress(ip),
+      ipHash,
       userAgent,
       referrer,
       deviceType: userAgent?.toLowerCase().includes("mobile") ? "mobile" : "unknown",
@@ -96,7 +101,7 @@ export async function resolvePublicProfile({
       profileId: device.profileId,
       scanEventId: scan.id,
       action: "PROFILE_VIEWED",
-      ipHash: hashIpAddress(ip),
+      ipHash,
       userAgent,
     },
   });
