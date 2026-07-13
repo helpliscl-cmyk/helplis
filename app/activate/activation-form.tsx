@@ -2,6 +2,7 @@
 
 import type { ChangeEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import {
   Camera,
   CheckCircle2,
@@ -227,8 +228,8 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
       setPhotoStatus("Usa una imagen JPG, PNG o WebP.");
       return;
     }
-    if (file.size > 1_200_000) {
-      setPhotoStatus("La foto debe pesar menos de 1.2 MB.");
+    if (file.size > 5_000_000) {
+      setPhotoStatus("La foto debe pesar menos de 5 MB.");
       return;
     }
 
@@ -236,7 +237,7 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
     reader.onload = () => {
       const value = typeof reader.result === "string" ? reader.result : "";
       setPhotoDataUrl(value);
-      setPhotoStatus("Foto cargada. Puedes reemplazarla o eliminarla.");
+      setPhotoStatus("Foto lista para subir. Puedes reemplazarla o eliminarla.");
     };
     reader.readAsDataURL(file);
   }
@@ -357,16 +358,35 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
                   Elegir desde galeria
                 </Button>
                 {photoDataUrl ? (
-                  <Button type="button" variant="ghost" onClick={() => setPhotoDataUrl("")}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setPhotoDataUrl("");
+                      setPhotoStatus("Continuaras sin foto.");
+                    }}
+                  >
                     <Trash2 aria-hidden className="h-4 w-4" />
                     Eliminar foto
+                  </Button>
+                ) : null}
+                {!photoDataUrl ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setPhotoStatus("Continuaras sin foto.");
+                      nextStep();
+                    }}
+                  >
+                    Continuar sin foto
                   </Button>
                 ) : null}
                 {photoStatus ? <p className="text-xs text-[var(--brand-muted)]">{photoStatus}</p> : null}
               </div>
               <div className="grid gap-4">
                 <p className="text-sm leading-6 text-[var(--brand-muted)]">
-                  Esta foto ayudara a reconocer a la persona cuando alguien escanee su HelPlis.
+                  Esta foto puede ayudar a reconocer a la persona cuando alguien escanee su HelPlis.
                 </p>
                 <Field label="Tipo de apoyo">
                   <Select name="profileType" defaultValue="CHILD" required>
@@ -500,10 +520,7 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
             <p className="text-sm leading-6 text-[var(--brand-muted)]">
               Revisa la vista previa y confirma. Despues podras ajustar privacidad desde tu dashboard.
             </p>
-            <Button type="submit" className="w-full" variant="accent">
-              <KeyRound aria-hidden className="h-4 w-4" />
-              Confirmar activacion
-            </Button>
+            <ActivationSubmitButton />
         </section>
 
         <div className="flex flex-col-reverse gap-3 border-t border-[var(--brand-border)] pt-4 sm:flex-row sm:justify-between">
@@ -520,6 +537,16 @@ export function ActivationForm({ publicCode: initialPublicCode, error }: { publi
         </div>
       </form>
     </Card>
+  );
+}
+
+function ActivationSubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" className="w-full" variant="accent" disabled={pending}>
+      <KeyRound aria-hidden className="h-4 w-4" />
+      {pending ? "Subiendo foto y activando..." : "Confirmar activacion"}
+    </Button>
   );
 }
 
