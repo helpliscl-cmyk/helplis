@@ -106,8 +106,8 @@ export default async function SampleProductionPreviewPage({
             <p className="font-medium">Misma URL permanente</p>
           </div>
           <div>
-            <p className="text-neutral-500">ActivationCode</p>
-            <p className="font-medium">Interno, no proveedor</p>
+            <p className="text-neutral-500">Credencial interna</p>
+            <p className="font-medium">No incluida en archivos</p>
           </div>
           <div>
             <p className="text-neutral-500">UID NFC</p>

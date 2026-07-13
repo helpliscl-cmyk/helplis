@@ -27,13 +27,13 @@ export default async function ManufacturerExportPage({ params }: { params: Promi
         </Link>
         <h1 className="mt-2 text-2xl font-semibold">Archivos para proveedor</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          {batch.internalReference} · {batch._count.devices} codigos generados · sin activationCode.
+          {batch.internalReference} · {batch._count.devices} codigos generados · sin credenciales secretas.
         </p>
       </header>
 
       <Card className="border-amber-200 bg-amber-50">
         <p className="text-sm font-medium text-amber-900">
-          El paquete estandar solo incluye publicCode, URL, QR y NFC. El codigo secreto de activacion no viaja al proveedor.
+          El paquete estandar solo incluye publicCode, URL, QR y NFC. La credencial secreta de activacion no viaja al proveedor.
         </p>
       </Card>
 
