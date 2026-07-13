@@ -140,8 +140,52 @@ export async function resolvePublicProfile({
   };
 }
 
+async function findOrCreatePublicActionScan({
+  scanId,
+  publicCode,
+  ip,
+  userAgent,
+}: {
+  scanId: string;
+  publicCode?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+}) {
+  const existingScan = await prisma.scanEvent.findUnique({
+    where: { id: scanId },
+    include: { device: true },
+  });
+  if (existingScan) return existingScan;
+
+  const normalizedCode = publicCode?.trim().toUpperCase();
+  if (!normalizedCode || !/^[A-Z0-9]{4,12}$/.test(normalizedCode)) return null;
+
+  const device = await prisma.device.findUnique({
+    where: { publicCode: normalizedCode },
+    include: { profile: true },
+  });
+  if (!device?.profile?.isPublic) return null;
+  if (["AVAILABLE", "UNASSIGNED", "RESERVED", "SUSPENDED", "DEACTIVATED", "REPLACED", "DAMAGED"].includes(device.status)) {
+    return null;
+  }
+
+  return prisma.scanEvent.create({
+    data: {
+      deviceId: device.id,
+      profileId: device.profileId,
+      scanMethod: "UNKNOWN",
+      ipHash: hashIpAddress(ip),
+      userAgent,
+      deviceType: userAgent?.toLowerCase().includes("mobile") ? "mobile" : "unknown",
+      eventStatus: "RECORDED",
+    },
+    include: { device: true },
+  });
+}
+
 export async function recordPublicContactAction({
   scanId,
+  publicCode,
   action,
   latitude,
   longitude,
@@ -151,6 +195,7 @@ export async function recordPublicContactAction({
   userAgent,
 }: {
   scanId: string;
+  publicCode?: string | null;
   action: ContactActionType;
   latitude?: number;
   longitude?: number;
@@ -159,10 +204,7 @@ export async function recordPublicContactAction({
   ip?: string | null;
   userAgent?: string | null;
 }) {
-  const scan = await prisma.scanEvent.findUnique({
-    where: { id: scanId },
-    include: { device: true },
-  });
+  const scan = await findOrCreatePublicActionScan({ scanId, publicCode, ip, userAgent });
   if (!scan) throw new Error("Scan no encontrado.");
 
   if (action === "LOCATION_SHARED") {
@@ -252,34 +294,30 @@ export async function recordPublicContactAction({
 
 export async function resolvePublicContactLink({
   scanId,
+  publicCode,
   action,
   ip,
   userAgent,
 }: {
   scanId: string;
+  publicCode?: string | null;
   action: "CALL_CLICKED" | "WHATSAPP_CLICKED";
   ip?: string | null;
   userAgent?: string | null;
 }) {
-  const scan = await prisma.scanEvent.findUnique({
-    where: { id: scanId },
+  const scan = await findOrCreatePublicActionScan({ scanId, publicCode, ip, userAgent });
+  if (!scan?.profileId) return null;
+
+  const profile = await prisma.profile.findUnique({
+    where: { id: scan.profileId },
     include: {
-      device: {
-        include: {
-          profile: {
-            include: {
-              contacts: {
-                where: { isVisible: true },
-                orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
-              },
-            },
-          },
-        },
+      contacts: {
+        where: { isVisible: true },
+        orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
       },
     },
   });
-  const profile = scan?.device.profile;
-  if (!scan || !profile?.isPublic) return null;
+  if (!profile?.isPublic) return null;
   if (["SUSPENDED", "DEACTIVATED", "REPLACED", "DAMAGED"].includes(scan.device.status)) return null;
 
   const allowsCall = profile.allowCall && profile.showCallButton;
@@ -293,7 +331,7 @@ export async function resolvePublicContactLink({
   const phone = normalizePhone(contact?.phone ?? null);
   if (!phone) return null;
 
-  await recordPublicContactAction({ scanId, action, ip, userAgent });
+  await recordPublicContactAction({ scanId: scan.id, publicCode: scan.device.publicCode, action, ip, userAgent });
 
   if (action === "CALL_CLICKED") {
     return { href: `tel:${phone}` };
@@ -306,6 +344,7 @@ export async function resolvePublicContactLink({
 
 export async function recordFoundReport({
   scanId,
+  publicCode,
   reporterName,
   reporterPhone,
   message,
@@ -317,6 +356,7 @@ export async function recordFoundReport({
   userAgent,
 }: {
   scanId: string;
+  publicCode?: string | null;
   reporterName?: string | null;
   reporterPhone?: string | null;
   message?: string | null;
@@ -327,10 +367,7 @@ export async function recordFoundReport({
   ip?: string | null;
   userAgent?: string | null;
 }) {
-  const scan = await prisma.scanEvent.findUnique({
-    where: { id: scanId },
-    include: { device: true },
-  });
+  const scan = await findOrCreatePublicActionScan({ scanId, publicCode, ip, userAgent });
   if (!scan) throw new Error("Scan no encontrado.");
 
   const cleanName = sanitizeOptional(reporterName, 120);

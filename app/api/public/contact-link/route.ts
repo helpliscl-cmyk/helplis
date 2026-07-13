@@ -6,6 +6,7 @@ import { resolvePublicContactLink } from "@/server/services/public-profile";
 
 const schema = z.object({
   scanId: z.string().min(1),
+  publicCode: z.string().min(4).max(12).optional(),
   action: z.enum(["CALL_CLICKED", "WHATSAPP_CLICKED"]),
 });
 
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
 
   const link = await resolvePublicContactLink({
     scanId: parsed.data.scanId,
+    publicCode: parsed.data.publicCode,
     action: parsed.data.action,
     ip,
     userAgent: headerStore.get("user-agent"),

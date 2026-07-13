@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/server/security/rate-limit";
 
 const schema = z.object({
   scanId: z.string().min(1),
+  publicCode: z.string().min(4).max(12).optional(),
   reporterName: z.string().max(120).optional(),
   reporterPhone: z.string().max(32).optional(),
   message: z.string().max(700).optional(),
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
   }
   await recordFoundReport({
     scanId: parsed.data.scanId,
+    publicCode: parsed.data.publicCode,
     reporterName: parsed.data.reporterName,
     reporterPhone: parsed.data.reporterPhone,
     message: parsed.data.message,

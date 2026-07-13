@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/server/security/rate-limit";
 
 const schema = z.object({
   scanId: z.string().min(1),
+  publicCode: z.string().min(4).max(12).optional(),
   permissionStatus: z.enum(["GRANTED", "DENIED", "UNAVAILABLE"]).default("GRANTED"),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
   }
   await recordPublicContactAction({
     scanId: parsed.data.scanId,
+    publicCode: parsed.data.publicCode,
     action,
     latitude: parsed.data.latitude,
     longitude: parsed.data.longitude,

@@ -115,6 +115,7 @@ export default async function PublicProfilePage({
           <div className="grid gap-5 p-5">
             <PublicActions
               scanId={result.scanId}
+              publicCode={result.publicCode}
               contacts={result.contacts}
               showLocationButton={result.profile.showLocationButton}
               allowFoundReport={result.profile.allowFoundReport}

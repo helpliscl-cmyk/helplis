@@ -18,21 +18,23 @@ type FoundLocation = {
   accuracy?: number;
 };
 
-async function record(scanId: string, action: string) {
+async function record(scanId: string, publicCode: string, action: string) {
   await fetch("/api/public/contact-action", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ scanId, action }),
+    body: JSON.stringify({ scanId, publicCode, action }),
   }).catch(() => undefined);
 }
 
 export function PublicActions({
   scanId,
+  publicCode,
   contacts,
   showLocationButton,
   allowFoundReport,
 }: {
   scanId: string;
+  publicCode: string;
   contacts: Contact[];
   showLocationButton: boolean;
   allowFoundReport: boolean;
@@ -62,6 +64,7 @@ export function PublicActions({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             scanId,
+            publicCode,
             permissionStatus: "GRANTED",
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
@@ -82,7 +85,7 @@ export function PublicActions({
     await fetch("/api/public/location", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ scanId, permissionStatus }),
+      body: JSON.stringify({ scanId, publicCode, permissionStatus }),
     }).catch(() => undefined);
   }
 
@@ -108,7 +111,7 @@ export function PublicActions({
 
   async function copyLink() {
     await navigator.clipboard?.writeText(window.location.href);
-    await record(scanId, "LINK_COPIED");
+    await record(scanId, publicCode, "LINK_COPIED");
     setStatus("Enlace copiado.");
   }
 
@@ -117,7 +120,7 @@ export function PublicActions({
     const response = await fetch("/api/public/contact-link", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ scanId, action }),
+      body: JSON.stringify({ scanId, publicCode, action }),
     });
     if (!response.ok) {
       setStatus("No se pudo abrir el contacto. Intenta con otra accion.");
@@ -147,6 +150,7 @@ export function PublicActions({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         scanId,
+        publicCode,
         reporterName: form.get("reporterName") || undefined,
         reporterPhone: form.get("reporterPhone") || undefined,
         message: form.get("message") || undefined,
@@ -161,7 +165,7 @@ export function PublicActions({
   }
 
   async function reportEmergency() {
-    await record(scanId, "EMERGENCY_REPORTED");
+    await record(scanId, publicCode, "EMERGENCY_REPORTED");
     setStatus(
       "HelPlis no reemplaza servicios oficiales ni garantiza respuesta inmediata. Si hay riesgo inmediato, contacta emergencias.",
     );
