@@ -19,6 +19,7 @@ const adminLinks = [
   ["/admin", "Admin"],
   ["/admin/operations", "Operaciones"],
   ["/admin/leads", "Leads"],
+  ["/admin/mime", "MIME CRM"],
   ["/admin/orders", "Pedidos"],
   ["/admin/inventory", "Inventario"],
   ["/admin/production", "Produccion"],

@@ -2,6 +2,7 @@ import {
   ActivationStatus,
   BatchStatus,
   CampaignStatus,
+  CommercialStatus,
   ContactActionType,
   DeviceStatus,
   NotificationEventType,
@@ -17,6 +18,7 @@ import {
 } from "@prisma/client";
 import { OFFICIAL_CONTACT } from "../lib/constants";
 import { hashActivationCode, hashPassword } from "../lib/security/hashing";
+import { buildMimeUrl } from "../server/mime/types";
 import { buildPublicUrl } from "../server/services/codes";
 
 const prisma = new PrismaClient();
@@ -47,6 +49,13 @@ const demoActivationCodes: Record<string, string> = {
 };
 
 async function resetDatabase() {
+  await prisma.activity.deleteMany();
+  await prisma.opportunity.deleteMany();
+  await prisma.contact.deleteMany();
+  await prisma.scrapeAttempt.deleteMany();
+  await prisma.scrapeJob.deleteMany();
+  await prisma.establishmentChange.deleteMany();
+  await prisma.suppression.deleteMany();
   await prisma.supportTicket.deleteMany();
   await prisma.shipment.deleteMany();
   await prisma.payment.deleteMany();
@@ -72,6 +81,8 @@ async function resetDatabase() {
   await prisma.campaign.deleteMany();
   await prisma.organizationMembership.deleteMany();
   await prisma.organization.deleteMany();
+  await prisma.establishment.deleteMany();
+  await prisma.holder.deleteMany();
   await prisma.profile.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.supportMessage.deleteMany();
@@ -231,6 +242,213 @@ async function main() {
       },
     ],
   });
+
+  const mimeHolder = await prisma.holder.create({
+    data: {
+      normalizedName: "corporacion educacional demo mime",
+      originalName: "Corporacion Educacional Demo MIME",
+      type: "Sostenedor demo local",
+      website: "https://demo.helplis.cl",
+      primaryEmail: "contacto@demo.helplis.cl",
+      primaryPhone: "+56224066000",
+    },
+  });
+
+  const mimeSampleData = [
+    {
+      rbd: 8927,
+      name: "Liceo Demo Completo",
+      region: "Region Metropolitana",
+      province: "Santiago",
+      commune: "Providencia",
+      address: "Avda. Italia 980",
+      dependency: "Particular subvencionado",
+      educationLevels: "Parvularia, Basica y Media",
+      totalEnrollment: 540,
+      directorName: "Maria Directora",
+      contactEmail: "contacto@liceodemo.cl",
+      phone: "+5632036851",
+      website: "https://www.liceodemo.cl",
+      commercialStatus: CommercialStatus.PRIORIZADO,
+      score: 70,
+    },
+    {
+      rbd: 5611,
+      name: "Escuela Demo Sin Correo",
+      region: "Region Metropolitana",
+      province: "Santiago",
+      commune: "Santiago",
+      address: "Los Aromos 123",
+      dependency: "Municipal",
+      educationLevels: "Basica",
+      totalEnrollment: 180,
+      directorName: "Direccion Demo",
+      contactEmail: null,
+      phone: "+56224066000",
+      website: null,
+      commercialStatus: CommercialStatus.CONTACTO_POR_INVESTIGAR,
+      score: 33,
+    },
+    {
+      rbd: 10686,
+      name: "Colegio Demo Sin Telefono",
+      region: "Region de Valparaiso",
+      province: "Quillota",
+      commune: "Calera",
+      address: "Ignacio Carrera Pinto S/n",
+      dependency: "Particular pagado",
+      educationLevels: "Basica",
+      totalEnrollment: 90,
+      directorName: "Equipo Directivo Demo",
+      contactEmail: "cpgmistral@example.cl",
+      phone: null,
+      website: "https://colegiodemo.example",
+      commercialStatus: CommercialStatus.LISTO_PARA_CONTACTAR,
+      score: 47,
+    },
+    {
+      rbd: 5570,
+      name: "Escuela Demo Rural",
+      region: "Region de O'Higgins",
+      province: "Cachapoal",
+      commune: "Rancagua",
+      address: "Camino Local 45",
+      dependency: "Municipal",
+      educationLevels: "Parvularia y Basica",
+      totalEnrollment: 220,
+      directorName: "Directora Rural Demo",
+      contactEmail: "escuela.rural@example.cl",
+      phone: "+56722223333",
+      website: null,
+      commercialStatus: CommercialStatus.SIN_REVISAR,
+      score: 45,
+    },
+    {
+      rbd: 9088,
+      name: "Liceo Demo Seguimiento",
+      region: "Region Metropolitana",
+      province: "Santiago",
+      commune: "Peñalolen",
+      address: "Avenida Demo 100",
+      dependency: "Municipal",
+      educationLevels: "Media",
+      totalEnrollment: 410,
+      directorName: "Director Seguimiento Demo",
+      contactEmail: "direccion9088@example.cl",
+      phone: "+56229397740",
+      website: "https://liceoseguimiento.example",
+      commercialStatus: CommercialStatus.SEGUIMIENTO,
+      score: 52,
+    },
+  ];
+
+  const mimeJob = await prisma.scrapeJob.create({
+    data: {
+      type: "SAMPLE",
+      status: "COMPLETED",
+      totalItems: mimeSampleData.length,
+      processedItems: mimeSampleData.length,
+      successfulItems: mimeSampleData.length,
+      configuration: JSON.stringify({ source: "seed local", sample: true }),
+      startedAt: new Date("2026-07-12T12:00:00.000Z"),
+      finishedAt: new Date("2026-07-12T12:05:00.000Z"),
+      lastHeartbeatAt: new Date("2026-07-12T12:05:00.000Z"),
+    },
+  });
+
+  for (const item of mimeSampleData) {
+    const establishment = await prisma.establishment.create({
+      data: {
+        rbd: item.rbd,
+        name: item.name,
+        status: "Funcionando",
+        region: item.region,
+        province: item.province,
+        commune: item.commune,
+        address: item.address,
+        dependency: item.dependency,
+        officialRecognition: "Reconocido oficialmente",
+        educationLevels: item.educationLevels,
+        totalEnrollment: item.totalEnrollment,
+        directorName: item.directorName,
+        holderName: mimeHolder.originalName,
+        holderId: mimeHolder.id,
+        phone: item.phone,
+        contactEmail: item.contactEmail,
+        website: item.website,
+        mimeUrl: buildMimeUrl(item.rbd),
+        source: "SEED_LOCAL_MIME_SAMPLE",
+        sourceCheckedAt: new Date("2026-07-12T12:00:00.000Z"),
+        sourceChangedAt: new Date("2026-07-12T12:00:00.000Z"),
+        contentHash: `seed-local-${item.rbd}`,
+        extraData: JSON.stringify({ fixture: true }),
+      },
+    });
+
+    await prisma.contact.create({
+      data: {
+        establishmentId: establishment.id,
+        holderId: mimeHolder.id,
+        name: item.directorName,
+        role: "Direccion",
+        email: item.contactEmail,
+        phone: item.phone,
+        source: "SEED_LOCAL_MIME_SAMPLE",
+        sourceUrl: establishment.mimeUrl,
+        verifiedAt: new Date("2026-07-12T12:00:00.000Z"),
+        emailStatus: item.contactEmail ? "VALID_FORMAT" : "UNKNOWN",
+      },
+    });
+
+    const prospectOrganization = await prisma.organization.create({
+      data: {
+        name: item.name,
+        type: OrganizationType.SCHOOL,
+        slug: `mime-rbd-${item.rbd}`,
+        contactName: item.directorName,
+        contactEmail: item.contactEmail,
+        contactPhone: item.phone,
+        status: OrganizationStatus.PENDING,
+        establishmentId: establishment.id,
+        holderId: mimeHolder.id,
+        commercialStatus: item.commercialStatus,
+        priority: item.score,
+        prospectScore: item.score,
+        prospectScoreBreakdown: JSON.stringify([
+          { label: "Muestra local seed", matched: true, points: item.score },
+        ]),
+        nextActionAt:
+          item.commercialStatus === CommercialStatus.SEGUIMIENTO
+            ? new Date("2026-07-20T12:00:00.000Z")
+            : null,
+      },
+    });
+
+    await prisma.opportunity.create({
+      data: {
+        organizationId: prospectOrganization.id,
+        stage: item.commercialStatus,
+        estimatedValue: item.totalEnrollment * 18_000,
+        probability: item.commercialStatus === CommercialStatus.PRIORIZADO ? 20 : 10,
+        productInterest: "Pulseras QR/NFC para estudiantes",
+        source: "SEED_LOCAL_MIME_SAMPLE",
+        nextActionAt: prospectOrganization.nextActionAt,
+      },
+    });
+
+    await prisma.scrapeAttempt.create({
+      data: {
+        jobId: mimeJob.id,
+        establishmentId: establishment.id,
+        rbd: item.rbd,
+        url: establishment.mimeUrl,
+        status: "SUCCESS",
+        httpStatus: 200,
+        startedAt: new Date("2026-07-12T12:00:00.000Z"),
+        finishedAt: new Date("2026-07-12T12:01:00.000Z"),
+      },
+    });
+  }
 
   const [batchA, batchB] = await Promise.all([
     prisma.batch.create({

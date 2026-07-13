@@ -303,6 +303,69 @@ enum InstitutionLeadStatus {
   FOLLOW_UP
 }
 
+enum MimeScrapeJobType {
+  SAMPLE
+  IMPORTED_RBDS
+  NEVER_PROCESSED
+  RETRY_FAILED
+  STALE_30
+  STALE_60
+  STALE_90
+  STALE_180
+  SINGLE_RBD
+  REGION
+  COMMUNE
+  PRIORITY
+}
+
+enum ScrapeJobStatus {
+  DRAFT
+  QUEUED
+  RUNNING
+  PAUSED
+  COMPLETED
+  COMPLETED_WITH_ERRORS
+  FAILED
+  CANCELLED
+}
+
+enum ScrapeAttemptStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  SKIPPED
+  FAILED
+  RETRY_SCHEDULED
+  BLOCKED
+  NOT_FOUND
+}
+
+enum ContactEmailStatus {
+  UNKNOWN
+  VALID_FORMAT
+  INVALID_FORMAT
+  SHARED
+  SUPPRESSED
+  BOUNCED
+}
+
+enum CommercialStatus {
+  SIN_REVISAR
+  PRIORIZADO
+  CONTACTO_POR_INVESTIGAR
+  LISTO_PARA_CONTACTAR
+  PRIMER_CONTACTO
+  SEGUIMIENTO
+  RESPONDIO
+  REUNION_SOLICITADA
+  REUNION_AGENDADA
+  PROPUESTA_ENVIADA
+  NEGOCIACION
+  GANADO
+  PERDIDO
+  NO_CONTACTAR
+}
+
 enum OrganizationType {
   SCHOOL
   KINDERGARTEN
@@ -545,7 +608,7 @@ model Profile {
   bloodType               String?
   medicalInstructions     String?
   emergencyInstructions   String?
-  criticalInformation      String?
+  criticalInformation     String?
   organDonorOptional      Boolean?
   healthProviderOptional  String?
   specialInstructions     String?
@@ -621,23 +684,23 @@ model Profile {
 }
 
 model EmergencyContact {
-  id                String   @id @default(cuid())
+  id                String               @id @default(cuid())
   profileId         String
-  type              ContactType @default(PRIMARY)
+  type              ContactType          @default(PRIMARY)
   name              String
   relationship      String?
   relationshipCode  ContactRelationship?
   phone             String
   email             String?
   availabilityNotes String?
-  whatsappEnabled   Boolean  @default(true)
-  callEnabled       Boolean  @default(true)
-  messageEnabled    Boolean  @default(true)
-  priority          Int      @default(1)
-  isVisible         Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  profile           Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  whatsappEnabled   Boolean              @default(true)
+  callEnabled       Boolean              @default(true)
+  messageEnabled    Boolean              @default(true)
+  priority          Int                  @default(1)
+  isVisible         Boolean              @default(true)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  profile           Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
   @@index([type])
@@ -794,30 +857,48 @@ model Batch {
 }
 
 model Organization {
-  id                   String                   @id @default(cuid())
-  name                 String
-  type                 OrganizationType         @default(OTHER)
-  slug                 String                   @unique
-  contactName          String?
-  contactEmail         String?
-  contactPhone         String?
-  status               OrganizationStatus       @default(PENDING)
-  discountCode         String?
-  discountPercentage   Float                    @default(0)
-  commissionPercentage Float                    @default(0)
-  landingTitle         String?
-  landingDescription   String?
-  createdAt            DateTime                 @default(now())
-  updatedAt            DateTime                 @updatedAt
-  devices              Device[]
-  memberships          OrganizationMembership[]
-  campaigns            Campaign[]
-  importJobs           ImportJob[]
-  institutionLeads     InstitutionLead[]
-  supportTickets       SupportTicket[]
+  id                     String                   @id @default(cuid())
+  name                   String
+  type                   OrganizationType         @default(OTHER)
+  slug                   String                   @unique
+  contactName            String?
+  contactEmail           String?
+  contactPhone           String?
+  status                 OrganizationStatus       @default(PENDING)
+  discountCode           String?
+  discountPercentage     Float                    @default(0)
+  commissionPercentage   Float                    @default(0)
+  landingTitle           String?
+  landingDescription     String?
+  establishmentId        String?                  @unique
+  holderId               String?
+  commercialStatus       CommercialStatus         @default(SIN_REVISAR)
+  priority               Int                      @default(0)
+  assignedTo             String?
+  lastContactAt          DateTime?
+  nextActionAt           DateTime?
+  doNotContact           Boolean                  @default(false)
+  prospectScore          Int                      @default(0)
+  prospectScoreBreakdown String?
+  prospectNotes          String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  establishment          Establishment?           @relation(fields: [establishmentId], references: [id])
+  holder                 Holder?                  @relation(fields: [holderId], references: [id])
+  devices                Device[]
+  memberships            OrganizationMembership[]
+  campaigns              Campaign[]
+  importJobs             ImportJob[]
+  institutionLeads       InstitutionLead[]
+  supportTickets         SupportTicket[]
+  opportunities          Opportunity[]
+  activities             Activity[]
 
   @@index([status])
   @@index([type])
+  @@index([commercialStatus])
+  @@index([holderId])
+  @@index([nextActionAt])
 }
 
 model OrganizationMembership {
@@ -1242,6 +1323,224 @@ model InstitutionLead {
   @@index([type])
   @@index([createdAt])
   @@index([organizationId])
+}
+
+model Establishment {
+  id                      String                @id @default(cuid())
+  rbd                     Int                   @unique
+  name                    String?
+  status                  String?
+  region                  String?
+  province                String?
+  commune                 String?
+  address                 String?
+  latitude                Float?
+  longitude               Float?
+  dependency              String?
+  officialRecognition     String?
+  educationLevels         String?
+  totalEnrollment         Int?
+  averageStudentsPerCourse Float?
+  directorName            String?
+  holderName              String?
+  holderId                String?
+  phone                   String?
+  contactEmail            String?
+  website                 String?
+  mimeUrl                 String
+  source                  String                @default("MIME_MINEDUC")
+  sourceCheckedAt         DateTime?
+  sourceChangedAt         DateTime?
+  contentHash             String?
+  extraData               String?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  holder                  Holder?               @relation(fields: [holderId], references: [id], onDelete: SetNull)
+  contacts                Contact[]
+  scrapeAttempts          ScrapeAttempt[]
+  commercialOrganizations Organization[]
+  suppressions            Suppression[]
+  changes                 EstablishmentChange[]
+
+  @@index([region])
+  @@index([commune])
+  @@index([dependency])
+  @@index([status])
+  @@index([holderId])
+  @@index([sourceCheckedAt])
+}
+
+model Holder {
+  id                      String          @id @default(cuid())
+  normalizedName          String          @unique
+  originalName            String
+  type                    String?
+  website                 String?
+  primaryEmail            String?
+  primaryPhone            String?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  establishments          Establishment[]
+  contacts                Contact[]
+  commercialOrganizations Organization[]
+
+  @@index([type])
+  @@index([primaryEmail])
+}
+
+model Contact {
+  id              String             @id @default(cuid())
+  establishmentId String?
+  holderId        String?
+  name            String?
+  role            String?
+  email           String?
+  phone           String?
+  contactType     String?
+  label           String?
+  section         String?
+  source          String             @default("MIME_MINEDUC")
+  sourceUrl       String?
+  verifiedAt      DateTime?
+  emailStatus     ContactEmailStatus @default(UNKNOWN)
+  doNotContact    Boolean            @default(false)
+  notes           String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  establishment   Establishment?     @relation(fields: [establishmentId], references: [id], onDelete: SetNull)
+  holder          Holder?            @relation(fields: [holderId], references: [id], onDelete: SetNull)
+  activities      Activity[]
+
+  @@index([establishmentId])
+  @@index([holderId])
+  @@index([email])
+  @@index([doNotContact])
+}
+
+model ScrapeJob {
+  id              String            @id @default(cuid())
+  type            MimeScrapeJobType
+  status          ScrapeJobStatus   @default(DRAFT)
+  totalItems      Int               @default(0)
+  processedItems  Int               @default(0)
+  successfulItems Int               @default(0)
+  failedItems     Int               @default(0)
+  skippedItems    Int               @default(0)
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  lastHeartbeatAt DateTime?
+  configuration   String
+  lockOwner       String?
+  lockedAt        DateTime?
+  pauseReason     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  attempts        ScrapeAttempt[]
+
+  @@index([type])
+  @@index([status])
+  @@index([lastHeartbeatAt])
+}
+
+model ScrapeAttempt {
+  id              String              @id @default(cuid())
+  jobId           String
+  establishmentId String?
+  rbd             Int
+  url             String
+  requestedUrl    String?
+  finalUrl        String?
+  redirected      Boolean            @default(false)
+  contentType     String?
+  status          ScrapeAttemptStatus @default(PENDING)
+  httpStatus      Int?
+  attemptNumber   Int                 @default(1)
+  errorType       String?
+  errorMessage    String?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  nextRetryAt     DateTime?
+  job             ScrapeJob           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  establishment   Establishment?      @relation(fields: [establishmentId], references: [id], onDelete: SetNull)
+
+  @@index([jobId])
+  @@index([establishmentId])
+  @@index([rbd])
+  @@index([status])
+  @@index([nextRetryAt])
+}
+
+model Opportunity {
+  id              String           @id @default(cuid())
+  organizationId  String
+  stage           CommercialStatus @default(SIN_REVISAR)
+  estimatedValue  Int?
+  probability     Int?
+  productInterest String?
+  source          String?
+  nextActionAt    DateTime?
+  lostReason      String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  activities      Activity[]
+
+  @@index([organizationId])
+  @@index([stage])
+  @@index([nextActionAt])
+}
+
+model Activity {
+  id             String       @id @default(cuid())
+  organizationId String
+  contactId      String?
+  opportunityId  String?
+  type           String
+  direction      String?
+  subject        String?
+  body           String?
+  occurredAt     DateTime
+  createdBy      String?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  opportunity    Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([contactId])
+  @@index([opportunityId])
+  @@index([occurredAt])
+}
+
+model Suppression {
+  id              String         @id @default(cuid())
+  email           String?
+  domain          String?
+  establishmentId String?
+  reason          String
+  source          String?
+  createdAt       DateTime       @default(now())
+  establishment   Establishment? @relation(fields: [establishmentId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([domain])
+  @@index([establishmentId])
+}
+
+model EstablishmentChange {
+  id              String        @id @default(cuid())
+  establishmentId String
+  source          String        @default("MIME_MINEDUC")
+  sourceUrl       String?
+  changedFields   String
+  previousData    String?
+  newData         String?
+  contentHash     String?
+  createdAt       DateTime      @default(now())
+  establishment   Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+
+  @@index([establishmentId])
+  @@index([createdAt])
 }
 
 model SupportTicket {

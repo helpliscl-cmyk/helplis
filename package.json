@@ -24,6 +24,8 @@
     "production:export": "tsx scripts/production-export.ts",
     "production:verify": "tsx scripts/production-verify.ts",
     "production:import-uid": "tsx scripts/production-import-uid.ts",
+    "mime:seed-sample": "tsx scripts/mime-seed-sample.ts",
+    "mime:validate-rancagua": "tsx scripts/mime-validate-rancagua-real.ts",
     "typecheck": "tsc --noEmit"
   },
   "prisma": {
@@ -32,6 +34,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
     "iron-session": "^8.0.4",
     "jszip": "^3.10.1",

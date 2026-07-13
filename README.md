@@ -67,7 +67,16 @@ El activationCode se guarda hasheado en SQLite. El valor anterior existe solo pa
 - `npm run import:batch`: importa `data/example-import.csv` o ruta indicada.
 - `npm run export:batch`: exporta dispositivos por lote.
 - `npm run verify:batch`: valida URLs, duplicados y hashes.
+- `npm run mime:seed-sample`: inserta una muestra MIME local sin resetear SQLite.
 - `npm run typecheck`: TypeScript.
+
+## MIME Mineduc CRM
+
+El módulo administrativo de prospección educativa vive en `/admin/mime`.
+Incluye importación CSV/XLSX con preview, scraper MIME responsable, jobs persistentes,
+CRM de establecimientos, sostenedores, pipeline y cola de tareas.
+
+Guía técnica: `docs/MIME_MINEDUC_CRM.md`.
 
 ## Rutas principales
 

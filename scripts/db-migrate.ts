@@ -43,34 +43,64 @@ function hasCoreTables(dbPath: string, DatabaseSync: DatabaseSyncConstructor | n
   return probe.stdout.includes("User") && probe.stdout.includes("Device");
 }
 
+function hasTable(dbPath: string, tableName: string, DatabaseSync: DatabaseSyncConstructor | null) {
+  if (!existsSync(dbPath)) return false;
+
+  if (DatabaseSync) {
+    const db = new DatabaseSync(dbPath);
+    try {
+      const tables = db
+        .prepare(`select name from sqlite_master where type = 'table' and name = '${tableName.replace(/'/g, "''")}'`)
+        .all();
+      return tables.some((table) => table.name === tableName);
+    } finally {
+      db.close();
+    }
+  }
+
+  const probe = spawnSync("sqlite3", [dbPath, ".tables"], { encoding: "utf8" });
+  return probe.stdout.split(/\s+/).includes(tableName);
+}
+
+function hasColumn(dbPath: string, tableName: string, columnName: string, DatabaseSync: DatabaseSyncConstructor | null) {
+  if (!existsSync(dbPath)) return false;
+
+  if (DatabaseSync) {
+    const db = new DatabaseSync(dbPath);
+    try {
+      const columns = db.prepare(`pragma table_info('${tableName.replace(/'/g, "''")}')`).all();
+      return columns.some((column) => column.name === columnName);
+    } finally {
+      db.close();
+    }
+  }
+
+  const probe = spawnSync("sqlite3", [dbPath, `pragma table_info('${tableName.replace(/'/g, "''")}');`], {
+    encoding: "utf8",
+  });
+  return probe.stdout.includes(`|${columnName}|`);
+}
+
 mkdirSync(dirname(dbPath), { recursive: true });
 
 const DatabaseSync = loadDatabaseSync();
-
-if (hasCoreTables(dbPath, DatabaseSync)) {
-  console.log(`Base SQLite ya inicializada en ${dbPath}`);
-  process.exit(0);
-}
 
 const migrationsDir = resolve("prisma", "migrations");
 const migrationDirs = readdirSync(migrationsDir)
   .filter((entry) => existsSync(join(migrationsDir, entry, "migration.sql")))
   .sort();
 
-if (DatabaseSync) {
-  const db = new DatabaseSync(dbPath);
-  try {
-    for (const migration of migrationDirs) {
-      const sql = readFileSync(join(migrationsDir, migration, "migration.sql"), "utf8");
+function applyMigration(migration: string) {
+  const sql = readFileSync(join(migrationsDir, migration, "migration.sql"), "utf8");
+
+  if (DatabaseSync) {
+    const db = new DatabaseSync(dbPath);
+    try {
       db.exec(sql);
-      console.log(`Aplicada migracion ${migration}`);
+    } finally {
+      db.close();
     }
-  } finally {
-    db.close();
-  }
-} else {
-  for (const migration of migrationDirs) {
-    const sql = readFileSync(join(migrationsDir, migration, "migration.sql"), "utf8");
+  } else {
     const result = spawnSync("sqlite3", [dbPath], {
       input: sql,
       encoding: "utf8",
@@ -80,8 +110,43 @@ if (DatabaseSync) {
     if (result.status !== 0) {
       throw new Error(result.stderr || `No se pudo aplicar ${migration}`);
     }
-    console.log(`Aplicada migracion ${migration}`);
   }
+
+  console.log(`Aplicada migracion ${migration}`);
+}
+
+if (hasCoreTables(dbPath, DatabaseSync)) {
+  const incrementalMigrations = [
+    {
+      migration: "20260713173000_mime_scraper_crm",
+      markerTable: "Establishment",
+    },
+    {
+      migration: "20260713190000_mime_current_url_metadata",
+      markerTable: "ScrapeAttempt",
+      markerColumn: "finalUrl",
+    },
+  ];
+  let applied = 0;
+
+  for (const item of incrementalMigrations) {
+    const needsMigration = item.markerColumn
+      ? !hasColumn(dbPath, item.markerTable, item.markerColumn, DatabaseSync)
+      : !hasTable(dbPath, item.markerTable, DatabaseSync);
+    if (migrationDirs.includes(item.migration) && needsMigration) {
+      applyMigration(item.migration);
+      applied += 1;
+    }
+  }
+
+  if (!applied) console.log(`Base SQLite ya inicializada en ${dbPath}`);
+  process.exit(0);
+}
+
+if (DatabaseSync) {
+  for (const migration of migrationDirs) applyMigration(migration);
+} else {
+  for (const migration of migrationDirs) applyMigration(migration);
 }
 
 console.log(`Base SQLite lista en ${dbPath}`);
