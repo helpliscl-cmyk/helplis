@@ -15,4 +15,4 @@ La ruta `/p/[publicCode]` registra un scan event y renderiza una proyeccion publ
 9. Informacion adicional segun tipo.
 10. Texto de privacidad.
 
-Los telefonos pueden usarse en `tel:` o WhatsApp sin imprimirse como texto plano.
+Los telefonos pueden usarse en `tel:` o WhatsApp tras click explicito sin imprimirse como texto plano ni serializarse en el HTML inicial.

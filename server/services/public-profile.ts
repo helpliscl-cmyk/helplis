@@ -1,6 +1,11 @@
 import type { ContactActionType, ScanMethod } from "@prisma/client";
 import { hashIpAddress } from "@/lib/security/hashing";
-import { buildPublicProfileView, type PublicContactView, type PublicProfileView } from "@/server/profiles/public-view";
+import {
+  buildPublicProfileView,
+  normalizePhone,
+  type PublicContactView,
+  type PublicProfileView,
+} from "@/server/profiles/public-view";
 import { prisma } from "@/server/db/client";
 import { notificationProvider } from "@/server/notifications/provider";
 import { checkRateLimit } from "@/server/security/rate-limit";
@@ -243,6 +248,60 @@ export async function recordPublicContactAction({
       locationShared: action === "LOCATION_SHARED",
     },
   });
+}
+
+export async function resolvePublicContactLink({
+  scanId,
+  action,
+  ip,
+  userAgent,
+}: {
+  scanId: string;
+  action: "CALL_CLICKED" | "WHATSAPP_CLICKED";
+  ip?: string | null;
+  userAgent?: string | null;
+}) {
+  const scan = await prisma.scanEvent.findUnique({
+    where: { id: scanId },
+    include: {
+      device: {
+        include: {
+          profile: {
+            include: {
+              contacts: {
+                where: { isVisible: true },
+                orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  const profile = scan?.device.profile;
+  if (!scan || !profile?.isPublic) return null;
+  if (["SUSPENDED", "DEACTIVATED", "REPLACED", "DAMAGED"].includes(scan.device.status)) return null;
+
+  const allowsCall = profile.allowCall && profile.showCallButton;
+  const allowsWhatsapp = profile.allowWhatsApp && profile.showWhatsAppButton;
+  const contact = profile.contacts.find((candidate) => {
+    const phone = normalizePhone(candidate.phone);
+    if (!phone) return false;
+    if (action === "CALL_CLICKED") return allowsCall && candidate.callEnabled;
+    return allowsWhatsapp && candidate.whatsappEnabled;
+  });
+  const phone = normalizePhone(contact?.phone ?? null);
+  if (!phone) return null;
+
+  await recordPublicContactAction({ scanId, action, ip, userAgent });
+
+  if (action === "CALL_CLICKED") {
+    return { href: `tel:${phone}` };
+  }
+
+  const digits = phone.replace(/\D/g, "");
+  const message = encodeURIComponent(`Hola, escanee el codigo ${scan.device.publicCode} en HelPlis.`);
+  return { href: `https://wa.me/${digits}?text=${message}` };
 }
 
 export async function recordFoundReport({

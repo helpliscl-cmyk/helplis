@@ -119,7 +119,9 @@ describe("buildPublicProfileView", () => {
 
     expect(view.displayName).toBe("Mati");
     expect(view.contacts[0].phone).toBeNull();
-    expect(view.contacts[0].phoneForAction).toBe("+56988880001");
+    expect(view.contacts[0].callEnabled).toBe(true);
+    expect(view.contacts[0].whatsappEnabled).toBe(true);
+    expect(JSON.stringify(view)).not.toContain("+56988880001");
     expect(view.allergies).toBe("Mani");
     expect(view.medications).toBeNull();
   });
@@ -187,6 +189,7 @@ describe("buildPublicProfileView", () => {
     expect(view.showLocationButton).toBe(false);
     expect(view.allowFoundReport).toBe(false);
     expect(view.contacts[0].name).toBeNull();
-    expect(view.contacts[0].phoneForAction).toBeNull();
+    expect(view.contacts[0].callEnabled).toBe(false);
+    expect(view.contacts[0].whatsappEnabled).toBe(false);
   });
 });

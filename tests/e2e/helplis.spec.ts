@@ -65,11 +65,15 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByText(batchReference)).toBeVisible();
 
   await page.goto("/admin/imports");
-  const importCode = `E2E${Date.now().toString().slice(-6)}`;
-  const importUid = `04:E2:${Date.now().toString().slice(-2)}:${Math.floor(Math.random() * 90 + 10)}`;
-  await page.getByLabel("CSV").fill(`${importCode},https://helplis.cl/p/${importCode},${importUid},WRISTBAND`);
+  const importSuffix = `${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 90 + 10)}`;
+  const importCode = `E2E${importSuffix}`;
+  const importUid = `04:E2:${importSuffix.slice(-4, -2)}:${importSuffix.slice(-2)}`;
+  await page.getByLabel("Archivo / nombre lógico").fill(`e2e-${importCode}.csv`);
+  await page.locator('textarea[name="csv"]').fill(`${importCode},https://helplis.cl/p/${importCode},${importUid},WRISTBAND`);
   await page.getByRole("button", { name: "Validar e importar filas válidas" }).click();
+  await expect(page.getByRole("heading", { name: `e2e-${importCode}.csv` })).toBeVisible();
   await expect(page.getByText("1 válidas")).toBeVisible();
+  await expect(page.getByText(`Fila 1: ${importCode}`)).toBeVisible();
 
   await page.goto("/activate/HLP009");
   await page.getByLabel("Codigo secreto").fill("ACT-HLP009");
@@ -87,6 +91,7 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await context.setGeolocation({ latitude: -33.45, longitude: -70.66 });
   await page.goto("/p/HLP009");
   await expect(page.getByRole("heading", { name: "Perfil E2E" })).toBeVisible();
+  expect(await page.content()).not.toContain("+56912345678");
   await page.getByRole("button", { name: "Compartir mi ubicacion con el responsable" }).click();
   await expect(page.getByText("Ubicacion compartida")).toBeVisible();
 

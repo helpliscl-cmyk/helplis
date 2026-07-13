@@ -49,7 +49,6 @@ export type PublicContactView = {
   relationship: string | null;
   availabilityNotes: string | null;
   phone: string | null;
-  phoneForAction: string | null;
   email: string | null;
   whatsappEnabled: boolean;
   callEnabled: boolean;
@@ -210,14 +209,10 @@ function buildPublicContactView(
     relationship: options.showNames ? cleanText(contact.relationship) : null,
     availabilityNotes: cleanText(contact.availabilityNotes),
     phone: options.showPhoneNumbers ? normalizedPhone : null,
-    phoneForAction:
-      normalizedPhone && (options.allowCall || options.allowWhatsApp || options.allowMessage)
-        ? normalizedPhone
-        : null,
     email: cleanText(contact.email),
-    whatsappEnabled: options.allowWhatsApp && contact.whatsappEnabled,
-    callEnabled: options.allowCall && contact.callEnabled,
-    messageEnabled: options.allowMessage && contact.messageEnabled,
+    whatsappEnabled: Boolean(normalizedPhone) && options.allowWhatsApp && contact.whatsappEnabled,
+    callEnabled: Boolean(normalizedPhone) && options.allowCall && contact.callEnabled,
+    messageEnabled: Boolean(normalizedPhone) && options.allowMessage && contact.messageEnabled,
     priority: contact.priority,
   };
 }
@@ -244,7 +239,7 @@ function isObjectProfile(type: ProfileType) {
   return type === "LUGGAGE" || type === "OBJECT" || type === "ASSET";
 }
 
-function normalizePhone(value: string | null) {
+export function normalizePhone(value: string | null) {
   if (!value) return null;
   const trimmed = value.trim();
   if (!/^\+?[\d\s().-]{7,24}$/.test(trimmed)) return null;

@@ -8,7 +8,6 @@ import { Input, Textarea } from "@/components/ui/field";
 type Contact = {
   name: string | null;
   phone: string | null;
-  phoneForAction: string | null;
   whatsappEnabled: boolean;
   callEnabled: boolean;
 };
@@ -29,13 +28,11 @@ async function record(scanId: string, action: string) {
 
 export function PublicActions({
   scanId,
-  publicCode,
   contacts,
   showLocationButton,
   allowFoundReport,
 }: {
   scanId: string;
-  publicCode: string;
   contacts: Contact[];
   showLocationButton: boolean;
   allowFoundReport: boolean;
@@ -43,8 +40,8 @@ export function PublicActions({
   const [status, setStatus] = useState<string | null>(null);
   const [showFoundForm, setShowFoundForm] = useState(false);
   const [foundLocation, setFoundLocation] = useState<FoundLocation | null>(null);
-  const firstCallable = contacts.find((contact) => contact.phoneForAction && contact.callEnabled);
-  const firstWhatsapp = contacts.find((contact) => contact.phoneForAction && contact.whatsappEnabled);
+  const hasCallable = contacts.some((contact) => contact.callEnabled);
+  const hasWhatsapp = contacts.some((contact) => contact.whatsappEnabled);
 
   async function shareLocation() {
     if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -115,6 +112,33 @@ export function PublicActions({
     setStatus("Enlace copiado.");
   }
 
+  async function openContact(action: "CALL_CLICKED" | "WHATSAPP_CLICKED") {
+    setStatus("Preparando contacto seguro...");
+    const response = await fetch("/api/public/contact-link", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ scanId, action }),
+    });
+    if (!response.ok) {
+      setStatus("No se pudo abrir el contacto. Intenta con otra accion.");
+      return;
+    }
+
+    const payload = (await response.json()) as { href?: string };
+    if (!payload.href) {
+      setStatus("No hay contacto disponible para esta accion.");
+      return;
+    }
+
+    setStatus(null);
+    if (action === "WHATSAPP_CLICKED") {
+      const opened = window.open(payload.href, "_blank", "noopener,noreferrer");
+      if (!opened) window.location.assign(payload.href);
+      return;
+    }
+    window.location.assign(payload.href);
+  }
+
   async function submitFoundReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -145,27 +169,17 @@ export function PublicActions({
 
   return (
     <div className="grid gap-3">
-      {firstCallable?.phoneForAction ? (
-        <a
-          href={`tel:${firstCallable.phoneForAction}`}
-          onClick={() => void record(scanId, "CALL_CLICKED")}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[var(--brand-primary-dark)] bg-[var(--brand-primary-dark)] px-4 py-2 text-sm font-medium text-white"
-        >
+      {hasCallable ? (
+        <Button type="button" onClick={() => void openContact("CALL_CLICKED")}>
           <Phone aria-hidden className="h-4 w-4" />
           Llamar
-        </a>
+        </Button>
       ) : null}
-      {firstWhatsapp?.phoneForAction ? (
-        <a
-          href={`https://wa.me/${firstWhatsapp.phoneForAction.replace(/\D/g, "")}?text=${encodeURIComponent(
-            `Hola, escanee el codigo ${publicCode} en HelPlis.`,
-          )}`}
-          onClick={() => void record(scanId, "WHATSAPP_CLICKED")}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-[var(--brand-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--brand-text)]"
-        >
+      {hasWhatsapp ? (
+        <Button type="button" variant="secondary" onClick={() => void openContact("WHATSAPP_CLICKED")}>
           <MessageCircle aria-hidden className="h-4 w-4" />
           Abrir WhatsApp
-        </a>
+        </Button>
       ) : null}
       {showLocationButton ? (
         <Button type="button" variant="accent" onClick={shareLocation}>

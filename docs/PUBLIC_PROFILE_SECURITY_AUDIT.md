@@ -8,7 +8,7 @@ Controles implementados:
 
 - Proyeccion publica server-side.
 - Telefonos ocultos por defecto como texto.
-- Telefonos disponibles solo para acciones `tel:`/WhatsApp.
+- Telefonos disponibles solo tras accion explicita; no se serializan en el HTML inicial cuando `showPhoneNumbers` esta apagado.
 - Campos medicos granulares.
 - Mascotas/objetos no exponen campos medicos.
 - Ubicacion solo por click.
