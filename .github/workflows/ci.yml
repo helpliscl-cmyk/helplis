@@ -8,8 +8,24 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: helplis_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d helplis_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DATABASE_URL: file:./dev.db
+      TEST_POSTGRES_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/helplis_test
+      TEST_POSTGRES_DIRECT_URL: postgresql://postgres:postgres@localhost:5432/helplis_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,3 +40,18 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
+      - run: npx tsx scripts/write-production-prisma-schema.ts
+      - run: npx prisma db push --schema prisma/schema.production.prisma --skip-generate
+        env:
+          DATABASE_URL: ${{ env.TEST_POSTGRES_DATABASE_URL }}
+          DIRECT_URL: ${{ env.TEST_POSTGRES_DIRECT_URL }}
+      - run: npx prisma generate --schema prisma/schema.production.prisma
+        env:
+          DATABASE_URL: ${{ env.TEST_POSTGRES_DATABASE_URL }}
+          DIRECT_URL: ${{ env.TEST_POSTGRES_DIRECT_URL }}
+      - run: npx vitest run --config vitest.integration.config.ts
+        env:
+          DATABASE_URL: ${{ env.TEST_POSTGRES_DATABASE_URL }}
+          DIRECT_URL: ${{ env.TEST_POSTGRES_DIRECT_URL }}
+          TEST_POSTGRES_DATABASE_URL: ${{ env.TEST_POSTGRES_DATABASE_URL }}
+          AUTH_SECRET: test-postgres-secret-with-at-least-32-characters

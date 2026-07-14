@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link, { type LinkProps } from "next/link";
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -28,11 +28,11 @@ export function Button({ className, variant = "primary", type = "button", ...pro
   );
 }
 
-type ButtonLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
-  href: string;
-  children: ReactNode;
-  variant?: keyof typeof variants;
-};
+type ButtonLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> &
+  Pick<LinkProps, "href" | "prefetch" | "replace" | "scroll"> & {
+    children: ReactNode;
+    variant?: keyof typeof variants;
+  };
 
 export function ButtonLink({ className, variant = "primary", ...props }: ButtonLinkProps) {
   return (

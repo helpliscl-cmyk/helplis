@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { revalidatePath } from "next/cache";
@@ -15,7 +16,11 @@ import {
 } from "@/server/operations/manufacturer-export";
 import { generateProductionCodesForBatch } from "@/server/operations/production-codes";
 import { recordPhysicalVerification } from "@/server/operations/physical-verification";
-import { confirmSamplePreviewBatch } from "@/server/operations/sample-batch-preview";
+import {
+  confirmSamplePreviewBatch,
+  sampleConfirmationCodeForError,
+  type SampleConfirmationErrorCode,
+} from "@/server/operations/sample-batch-preview";
 import { importSupplierUidReturn } from "@/server/operations/supplier-uid-import";
 
 const adminRoles = ["ADMIN", "SUPER_ADMIN", "SUPPORT"] as const;
@@ -185,13 +190,56 @@ export async function confirmSamplePreviewBatchAction(formData: FormData) {
   if (!encodedUnits) redirect("/admin/production/sample-preview?error=preview");
   if (!confirmedIrreversible) redirect("/admin/production/sample-preview?error=confirm-required");
 
+  let batchId: string;
   try {
     const batch = await confirmSamplePreviewBatch({ encodedUnits, actorUserId: user.id, confirmedIrreversible });
-    revalidatePath("/admin/production");
-    redirect(`/admin/production/${batch.id}?sample=confirmed`);
-  } catch {
-    redirect("/admin/production/sample-preview?error=confirm");
+    batchId = batch.id;
+  } catch (error) {
+    const code = sampleConfirmationCodeForError(error);
+    const requestId = randomUUID();
+    logSampleConfirmationError({
+      error,
+      code,
+      requestId,
+      actorUserId: user.id,
+      batchReference: "SAMPLE-HELPLIS-001",
+    });
+    redirect(`/admin/production/sample-preview?error=${code}&rid=${requestId}`);
   }
+
+  revalidatePath("/admin/production");
+  redirect(`/admin/production/${batchId}?sample=confirmed`);
+}
+
+function logSampleConfirmationError(input: {
+  error: unknown;
+  code: SampleConfirmationErrorCode;
+  requestId: string;
+  actorUserId: string;
+  batchReference: string;
+}) {
+  const error = input.error as { name?: unknown; message?: unknown; code?: unknown; meta?: unknown };
+  const prismaCode = typeof error?.code === "string" ? error.code : undefined;
+  const prismaTarget =
+    error?.meta && typeof error.meta === "object" && "target" in error.meta
+      ? (error.meta as { target?: unknown }).target
+      : undefined;
+
+  console.error(
+    JSON.stringify({
+      level: "error",
+      operation: "sample-preview-confirmation",
+      code: input.code,
+      requestId: input.requestId,
+      actorUserId: input.actorUserId,
+      batchReference: input.batchReference,
+      timestamp: new Date().toISOString(),
+      errorName: typeof error?.name === "string" ? error.name : "Error",
+      errorMessage: typeof error?.message === "string" ? error.message : "Sample confirmation failed.",
+      prismaCode,
+      prismaTarget,
+    }),
+  );
 }
 
 export async function generateManufacturerExportAction(formData: FormData) {

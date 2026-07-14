@@ -12,6 +12,9 @@ import {
   buildSampleQrZip,
   buildSampleSupplierPackageZip,
   buildSupplierReturnTemplateCsv,
+  decodeSampleUnits,
+  encodeSampleUnits,
+  SampleBatchConfirmationError,
   sampleUnitsToProductionRows,
 } from "@/server/operations/sample-batch-preview";
 
@@ -30,6 +33,38 @@ describe("sample batch preview", () => {
       expect(unit.qrContent).toBe(unit.publicUrl);
       expect(unit.nfcContent).toBe(unit.publicUrl);
       expect(unit.initialState).toBe("UNACTIVATED");
+    }
+  });
+
+  it("signs preview payloads and rejects malformed or expired previews", async () => {
+    const now = new Date("2026-07-14T00:00:00.000Z");
+    const preview = await buildSampleBatchPreview();
+    const encoded = encodeSampleUnits(preview.units, { now, ttlMs: 60_000 });
+
+    expect(decodeSampleUnits(encoded, { now })).toEqual(preview.units);
+
+    try {
+      decodeSampleUnits("", { now });
+      throw new Error("Expected invalid preview to throw.");
+    } catch (error) {
+      expect(error).toBeInstanceOf(SampleBatchConfirmationError);
+      expect((error as SampleBatchConfirmationError).code).toBe("INVALID_PREVIEW");
+    }
+
+    try {
+      decodeSampleUnits(encoded.slice(0, -2), { now });
+      throw new Error("Expected tampered preview to throw.");
+    } catch (error) {
+      expect(error).toBeInstanceOf(SampleBatchConfirmationError);
+      expect((error as SampleBatchConfirmationError).code).toBe("INVALID_PREVIEW");
+    }
+
+    try {
+      decodeSampleUnits(encoded, { now: new Date("2026-07-14T00:02:00.000Z") });
+      throw new Error("Expected expired preview to throw.");
+    } catch (error) {
+      expect(error).toBeInstanceOf(SampleBatchConfirmationError);
+      expect((error as SampleBatchConfirmationError).code).toBe("PREVIEW_EXPIRED");
     }
   });
 

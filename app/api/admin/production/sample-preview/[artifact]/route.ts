@@ -11,7 +11,9 @@ import {
   buildSampleSupplierPackageZip,
   buildSupplierReturnTemplateCsv,
   decodeSampleUnits,
+  sampleConfirmationCodeForError,
   SAMPLE_BATCH_REFERENCE,
+  type SampleBatchPreviewUnit,
 } from "@/server/operations/sample-batch-preview";
 
 function artifactResponse(body: Buffer | string, contentType: string, filename: string) {
@@ -29,7 +31,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ arti
   const user = await requireRole(["ADMIN", "SUPER_ADMIN", "SUPPORT"]);
   const { artifact } = await params;
   const unitsParam = new URL(request.url).searchParams.get("units") ?? "";
-  const units = decodeSampleUnits(unitsParam);
+  let units: SampleBatchPreviewUnit[];
+  try {
+    units = decodeSampleUnits(unitsParam);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: sampleConfirmationCodeForError(error),
+      },
+      { status: 400, headers: { "cache-control": "no-store" } },
+    );
+  }
   let body: Buffer | string;
   let contentType: string;
   let filename: string;
