@@ -1,5 +1,25 @@
 # Codex final report
 
+## Supplier SAMPLE final package - 2026-07-14
+
+Se agrego el flujo final para preparar localmente el paquete de Emilia desde el lote ya confirmado `SAMPLE-HELPLIS-001`.
+
+Cambios principales:
+
+- Generador reproducible en `server/operations/supplier-sample-package.ts`.
+- Scripts `npm run prepare:supplier-sample` y `npm run validate:supplier-sample`.
+- Accion admin `Preparar paquete final para proveedor` en el detalle del lote confirmado.
+- Paquete local `exports/SUPPLIER-SAMPLE-001` y `exports/SUPPLIER-SAMPLE-001.zip`.
+- Validacion de XLSX, CSV, QR PNG/SVG, logo, layout, checksums, ZIP y escaneo de secretos.
+- Pruebas unitarias para estructura, contenido, QR, checksums, ausencia de secretos, proteccion admin y regeneracion identica.
+
+Restricciones respetadas:
+
+- No se confirma otro lote.
+- No se regeneran public codes.
+- No se crean 500 unidades.
+- No se envia nada a Emilia.
+
 Date: 2026-07-12
 
 ## Summary

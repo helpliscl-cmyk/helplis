@@ -62,3 +62,27 @@ Nunca incluir:
 - UID inventado;
 - datos personales;
 - contactos.
+
+## SAMPLE final supplier package
+
+Después de confirmar `SAMPLE-HELPLIS-001`, el paquete final para Emilia se prepara con:
+
+```bash
+npm run prepare:supplier-sample
+npm run validate:supplier-sample
+```
+
+Salidas:
+
+- `exports/SUPPLIER-SAMPLE-001`
+- `exports/SUPPLIER-SAMPLE-001.zip`
+
+El paquete final usa solo los cinco dispositivos persistidos en PostgreSQL:
+
+- `SJRUPNZQ`
+- `BCM3BLAJ`
+- `H26EJYQW`
+- `THAHHRYR`
+- `TCR6MTJB`
+
+El ZIP contiene Excel, CSV, instrucciones PDF/TXT, QR PNG/SVG, logo vectorial, layout de referencia, plantilla de retorno y checksums. No incluye `activationCode`, `activationCodeHash`, UID inventado ni datos internos.

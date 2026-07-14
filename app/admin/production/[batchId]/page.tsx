@@ -10,8 +10,10 @@ import {
   recordSupplierEvidenceAction,
   updateProductionBatchAction,
 } from "@/features/production/actions";
+import { prepareSupplierSamplePackageAction } from "@/features/production/supplier-sample-actions";
 import { formatDate } from "@/lib/formatting/format";
 import { prisma } from "@/server/db/client";
+import { SUPPLIER_SAMPLE_BATCH_REFERENCE, SUPPLIER_SAMPLE_EXPORT_NAME } from "@/server/operations/supplier-sample-constants";
 
 const supplierEvidenceOptions = [
   { value: ProductionFileType.SUPPLIER_QUOTE, label: "Cotizacion" },
@@ -30,8 +32,15 @@ function Metric({ label, value }: { label: string; value: number | string }) {
   );
 }
 
-export default async function ProductionBatchDetailPage({ params }: { params: Promise<{ batchId: string }> }) {
+export default async function ProductionBatchDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ batchId: string }>;
+  searchParams: Promise<{ supplierPackage?: string }>;
+}) {
   const { batchId } = await params;
+  const query = await searchParams;
   const batch = await prisma.batch.findUnique({
     where: { id: batchId },
     include: {
@@ -83,6 +92,10 @@ export default async function ProductionBatchDetailPage({ params }: { params: Pr
   const supplierEvidence = batch.productionFiles.filter((file) =>
     supplierEvidenceOptions.some((option) => option.value === file.type),
   );
+  const supplierSamplePackage = batch.productionFiles.find(
+    (file) => file.filename === `${SUPPLIER_SAMPLE_EXPORT_NAME}.zip` && file.type === ProductionFileType.FULL_PACKAGE_ZIP,
+  );
+  const isSupplierSampleBatch = batch.internalReference === SUPPLIER_SAMPLE_BATCH_REFERENCE;
 
   return (
     <div className="grid gap-5">
@@ -117,13 +130,43 @@ export default async function ProductionBatchDetailPage({ params }: { params: Pr
             <h2 className="text-lg font-semibold">Acciones de lote</h2>
             <p className="text-sm text-neutral-600">Genera codigos antes de cualquier archivo de proveedor.</p>
           </div>
-          <form action={generateProductionCodesAction}>
-            <input type="hidden" name="batchId" value={batch.id} />
-            <Button type="submit" disabled={batch._count.devices > 0}>
-              Generar codigos
-            </Button>
-          </form>
+          <div className="flex flex-wrap gap-2">
+            <form action={generateProductionCodesAction}>
+              <input type="hidden" name="batchId" value={batch.id} />
+              <Button type="submit" disabled={batch._count.devices > 0}>
+                Generar codigos
+              </Button>
+            </form>
+            {isSupplierSampleBatch ? (
+              <form action={prepareSupplierSamplePackageAction}>
+                <input type="hidden" name="batchId" value={batch.id} />
+                <Button type="submit" variant="secondary">
+                  Preparar paquete final para proveedor
+                </Button>
+              </form>
+            ) : null}
+          </div>
         </div>
+        {query.supplierPackage === "error" ? (
+          <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            No se pudo preparar el paquete final. Revisa los logs del servidor.
+          </p>
+        ) : null}
+        {query.supplierPackage === "unsupported" ? (
+          <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            El paquete final esta habilitado solo para SAMPLE-HELPLIS-001.
+          </p>
+        ) : null}
+        {supplierSamplePackage ? (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+            <p className="font-medium">Paquete final disponible: {supplierSamplePackage.filename}</p>
+            <p>Generado: {formatDate(supplierSamplePackage.generatedAt)}</p>
+            <p className="font-mono text-xs">SHA-256: {supplierSamplePackage.checksum}</p>
+            <Link className="text-[var(--brand-primary-dark)] underline-offset-4 hover:underline" href={`/api/admin/production-files/${supplierSamplePackage.id}`}>
+              Descargar ZIP final
+            </Link>
+          </div>
+        ) : null}
         <div className="grid gap-2 sm:grid-cols-4">
           <Link className="rounded-md border border-neutral-300 px-3 py-2 text-center text-sm" href={`/admin/production/${batch.id}/export`}>
             Archivos proveedor
