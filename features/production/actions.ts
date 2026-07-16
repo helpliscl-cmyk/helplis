@@ -21,6 +21,13 @@ import {
   sampleConfirmationCodeForError,
   type SampleConfirmationErrorCode,
 } from "@/server/operations/sample-batch-preview";
+import { capturePhysicalNfcUid, PhysicalUidCaptureError } from "@/server/operations/physical-uid-capture";
+import {
+  confirmHelpetsSamplePreviewBatch,
+  helpetsConfirmationCodeForError,
+  HELPETS_SAMPLE_BATCH_REFERENCE,
+  type HelpetsConfirmationErrorCode,
+} from "@/server/operations/helpets-sample";
 import { importSupplierUidReturn } from "@/server/operations/supplier-uid-import";
 
 const adminRoles = ["ADMIN", "SUPER_ADMIN", "SUPPORT"] as const;
@@ -211,6 +218,39 @@ export async function confirmSamplePreviewBatchAction(formData: FormData) {
   redirect(`/admin/production/${batchId}?sample=confirmed`);
 }
 
+export async function confirmHelpetsSamplePreviewBatchAction(formData: FormData) {
+  const user = await requireRole([...adminRoles]);
+  assertProductionWriteSafety(user);
+  const encodedUnits = text(formData, "encodedUnits");
+  const confirmedIrreversible = ["yes", "on", "true"].includes(String(formData.get("confirmIrreversible") ?? ""));
+  if (!encodedUnits) redirect("/admin/production/helpets-sample-preview?error=preview");
+  if (!confirmedIrreversible) redirect("/admin/production/helpets-sample-preview?error=confirm-required");
+
+  let batchId: string;
+  try {
+    const batch = await confirmHelpetsSamplePreviewBatch({
+      encodedUnits,
+      actorUserId: user.id,
+      confirmedIrreversible,
+    });
+    batchId = batch.id;
+  } catch (error) {
+    const code = helpetsConfirmationCodeForError(error);
+    const requestId = randomUUID();
+    logHelpetsConfirmationError({
+      error,
+      code,
+      requestId,
+      actorUserId: user.id,
+      batchReference: HELPETS_SAMPLE_BATCH_REFERENCE,
+    });
+    redirect(`/admin/production/helpets-sample-preview?error=${code}&rid=${requestId}`);
+  }
+
+  revalidatePath("/admin/production");
+  redirect(`/admin/production/${batchId}?helpetsSample=confirmed`);
+}
+
 function logSampleConfirmationError(input: {
   error: unknown;
   code: SampleConfirmationErrorCode;
@@ -236,6 +276,37 @@ function logSampleConfirmationError(input: {
       timestamp: new Date().toISOString(),
       errorName: typeof error?.name === "string" ? error.name : "Error",
       errorMessage: typeof error?.message === "string" ? error.message : "Sample confirmation failed.",
+      prismaCode,
+      prismaTarget,
+    }),
+  );
+}
+
+function logHelpetsConfirmationError(input: {
+  error: unknown;
+  code: HelpetsConfirmationErrorCode;
+  requestId: string;
+  actorUserId: string;
+  batchReference: string;
+}) {
+  const error = input.error as { name?: unknown; message?: unknown; code?: unknown; meta?: unknown };
+  const prismaCode = typeof error?.code === "string" ? error.code : undefined;
+  const prismaTarget =
+    error?.meta && typeof error.meta === "object" && "target" in error.meta
+      ? (error.meta as { target?: unknown }).target
+      : undefined;
+
+  console.error(
+    JSON.stringify({
+      level: "error",
+      operation: "helpets-sample-preview-confirmation",
+      code: input.code,
+      requestId: input.requestId,
+      actorUserId: input.actorUserId,
+      batchReference: input.batchReference,
+      timestamp: new Date().toISOString(),
+      errorName: typeof error?.name === "string" ? error.name : "Error",
+      errorMessage: typeof error?.message === "string" ? error.message : "Helpets sample confirmation failed.",
       prismaCode,
       prismaTarget,
     }),
@@ -302,6 +373,32 @@ export async function recordPhysicalVerificationAction(formData: FormData) {
 
   revalidatePath(`/admin/production/${batchId}`);
   redirect(`/admin/production/${batchId}/verification?verified=${encodeURIComponent(publicCode)}`);
+}
+
+export async function captureHelpetsPhysicalUidAction(formData: FormData) {
+  const user = await requireRole([...adminRoles]);
+  assertProductionWriteSafety(user);
+  const batchId = text(formData, "batchId");
+  const publicCode = text(formData, "publicCode");
+  const nfcUid = text(formData, "nfcUid");
+  if (!batchId || !publicCode || !nfcUid) {
+    redirect(`/admin/production/${batchId || ""}/physical-uid-capture?error=missing`);
+  }
+
+  try {
+    await capturePhysicalNfcUid({
+      batchId,
+      publicCode,
+      nfcUid,
+      actorUserId: user.id,
+    });
+  } catch (error) {
+    const code = error instanceof PhysicalUidCaptureError ? error.code : "unknown";
+    redirect(`/admin/production/${batchId}/physical-uid-capture?error=${code}`);
+  }
+
+  revalidatePath(`/admin/production/${batchId}`);
+  redirect(`/admin/production/${batchId}/physical-uid-capture?captured=${encodeURIComponent(publicCode)}`);
 }
 
 export async function recordSupplierEvidenceAction(formData: FormData) {

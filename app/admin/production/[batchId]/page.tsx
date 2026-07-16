@@ -174,8 +174,15 @@ export default async function ProductionBatchDetailPage({
           <Link className="rounded-md border border-neutral-300 px-3 py-2 text-center text-sm" href={`/admin/production/${batch.id}/supplier-return`}>
             Importar UID
           </Link>
-          <Link className="rounded-md border border-neutral-300 px-3 py-2 text-center text-sm" href={`/admin/production/${batch.id}/verification`}>
-            Verificacion fisica
+          <Link
+            className="rounded-md border border-neutral-300 px-3 py-2 text-center text-sm"
+            href={
+              batch.productType === "PET_TAG"
+                ? `/admin/production/${batch.id}/physical-uid-capture`
+                : `/admin/production/${batch.id}/verification`
+            }
+          >
+            {batch.productType === "PET_TAG" ? "Captura UID fisica" : "Verificacion fisica"}
           </Link>
           <Link className="rounded-md border border-neutral-300 px-3 py-2 text-center text-sm" href={`/admin/inventory?batchId=${batch.id}`}>
             Inventario

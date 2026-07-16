@@ -1,5 +1,28 @@
 # Codex final report
 
+## Helpets SAMPLE preview and supplier packages - 2026-07-15
+
+Se agrego un segundo flujo SAMPLE separado para Helpets, sin confirmar lote real y sin modificar `SAMPLE-HELPLIS-001`.
+
+Cambios principales:
+
+- Preview admin `/admin/production/helpets-sample-preview`.
+- Referencia `SAMPLE-HELPETS-001`, cantidad 5, `ProductType.PET_TAG`, `profileType` operativo `PET`.
+- Paquete simple para Leanne en `exports/HELPETS-SAMPLE-001-SIMPLE`.
+- Paquete interno de control en `exports/HELPETS-SAMPLE-001-INTERNAL`.
+- Ruta de descarga auditada para artifacts Helpets.
+- Confirmacion atomica preparada, pero no ejecutada.
+- Captura posterior de UID fisico en `/admin/production/[batchId]/physical-uid-capture`.
+- Scripts `npm run prepare:helpets-sample` y `npm run validate:helpets-sample`.
+
+Restricciones respetadas:
+
+- No se confirma `SAMPLE-HELPETS-001`.
+- No se modifica `SAMPLE-HELPLIS-001`.
+- No se generan 500 dispositivos.
+- No se envia nada a Leanne.
+- El paquete simple no incluye activationCode, hashes, UID ficticio, datos personales ni QR como archivos.
+
 ## Supplier SAMPLE final package - 2026-07-14
 
 Se agrego el flujo final para preparar localmente el paquete de Emilia desde el lote ya confirmado `SAMPLE-HELPLIS-001`.

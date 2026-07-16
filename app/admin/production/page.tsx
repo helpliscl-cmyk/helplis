@@ -41,6 +41,9 @@ export default async function AdminProductionPage() {
           <ButtonLink href="/admin/production/sample-preview" variant="secondary">
             Preview SAMPLE
           </ButtonLink>
+          <ButtonLink href="/admin/production/helpets-sample-preview" variant="secondary">
+            Preview Helpets
+          </ButtonLink>
           <ButtonLink href="/admin/production/new">Nuevo lote</ButtonLink>
         </div>
       </header>

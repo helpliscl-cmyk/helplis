@@ -26,6 +26,8 @@
     "production:import-uid": "tsx scripts/production-import-uid.ts",
     "prepare:supplier-sample": "tsx scripts/prepare-supplier-sample-package.ts",
     "validate:supplier-sample": "tsx scripts/validate-supplier-sample-package.ts",
+    "prepare:helpets-sample": "tsx scripts/prepare-helpets-sample-package.ts",
+    "validate:helpets-sample": "tsx scripts/validate-helpets-sample-package.ts",
     "mime:seed-sample": "tsx scripts/mime-seed-sample.ts",
     "mime:validate-rancagua": "tsx scripts/mime-validate-rancagua-real.ts",
     "typecheck": "tsc --noEmit"

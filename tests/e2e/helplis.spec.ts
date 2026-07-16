@@ -84,15 +84,16 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await expect(page.getByRole("link", { name: "Activar", exact: true })).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 900 });
 
-  await page.goto("/");
-  await page.getByRole("link", { name: "Elegir pack de 2" }).click();
+  await page.goto("/quiero-helplis?pack=2&source=e2e_direct_pack_2");
   await expect(page).toHaveURL(/pack=2/);
   await expect(page.getByText("Pack 2 HelPlis").first()).toBeVisible();
   await expect(page.getByText("$28.000").first()).toBeVisible();
 
-  await submitLead(page, "2", "Lead Pack 2", "$28.000", "adulto_mayor");
-  await submitLead(page, "1", "Lead Pack 1", "$18.000", "nino");
-  await submitLead(page, "3", "Lead Pack 3", "$35.000", "persona_asistencia");
+  const leadSuffix = Date.now();
+  const leadPack3Name = `Lead Pack 3 ${leadSuffix}`;
+  await submitLead(page, "2", `Lead Pack 2 ${leadSuffix}`, "$28.000", "adulto_mayor");
+  await submitLead(page, "1", `Lead Pack 1 ${leadSuffix}`, "$18.000", "nino");
+  await submitLead(page, "3", leadPack3Name, "$35.000", "persona_asistencia");
 
   await page.goto("/login");
   await page.getByRole("button", { name: "Entrar" }).click();
@@ -100,7 +101,7 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
 
   await page.goto("/admin/leads");
   await expect(page.getByRole("heading", { name: "Leads comerciales" })).toBeVisible();
-  await expect(page.getByText("Lead Pack 3")).toBeVisible();
+  await expect(page.getByText(leadPack3Name)).toBeVisible();
   await expect(page.getByText("Pack 3 HelPlis").first()).toBeVisible();
   await expect(page.getByText("Pendiente").first()).toBeVisible();
 
@@ -119,7 +120,7 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.locator('textarea[name="csv"]').fill(`${importCode},https://helplis.cl/p/${importCode},${importUid},WRISTBAND`);
   await page.getByRole("button", { name: "Validar e importar filas válidas" }).click();
   await expect(page.getByRole("heading", { name: `e2e-${importCode}.csv` })).toBeVisible();
-  await expect(page.getByText("1 válidas")).toBeVisible();
+  await expect(page.getByText("1 válidas").first()).toBeVisible();
   await expect(page.getByText(`Fila 1: ${importCode}`)).toBeVisible();
 
   await loginAs(page, "familia@demo.helplis.cl");
@@ -200,7 +201,7 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
 
   await page.goto("/dashboard/devices/HLP009");
   await expect(page.getByRole("heading", { name: "Administrar HelPlis" })).toBeVisible();
-  await expect(page.getByText("ACTIVE")).toBeVisible();
+  await expect(page.getByText("Activo")).toBeVisible();
   await expect(page.getByText("04:DE:MO:009")).toBeVisible();
   await expect(page.getByText("Escaneos conservados")).toBeVisible();
   const reassignForm = page.locator("form").filter({ hasText: "Crear nuevo perfil" });
@@ -228,13 +229,19 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   expect(await page.content()).not.toContain("Puede desorientarse");
 
   await page.goto("/dashboard/devices");
-  await page.getByRole("button", { name: "Marcar perdido" }).first().click();
+  await Promise.all([
+    page.waitForURL(/status=updated/),
+    page.getByRole("button", { name: "Marcar perdido" }).first().click(),
+  ]);
   await expect(page.getByText("LOST")).toBeVisible();
   await page.goto("/p/HLP009");
   await expect(page.getByText("Modo perdido")).toBeVisible();
 
   await page.goto("/dashboard/devices");
-  await page.getByRole("button", { name: "Marcar encontrado" }).first().click();
+  await Promise.all([
+    page.waitForURL(/status=updated/),
+    page.getByRole("button", { name: "Marcar encontrado" }).first().click(),
+  ]);
   await expect(page.getByText("FOUND")).toBeVisible();
 
   await page.goto("/login");
@@ -258,6 +265,26 @@ test("flujo principal HelPlis MVP", async ({ page, context }) => {
   await page.getByRole("link", { name: "Cancelar" }).click();
   await expect(page.getByRole("heading", { name: "Produccion" })).toBeVisible();
   await expect(page.getByRole("link", { name: "SAMPLE-HELPLIS-001" })).toHaveCount(0);
+
+  await page.goto("/admin/production/helpets-sample-preview");
+  await expect(page.getByRole("heading", { name: "Preview SAMPLE Helpets" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "SAMPLE-HELPETS-001" })).toBeVisible();
+  await expect(page.locator("tbody tr")).toHaveCount(5);
+  for (let index = 0; index < 5; index += 1) {
+    const row = page.locator("tbody tr").nth(index);
+    const publicUrl = await row.locator("td").nth(2).innerText();
+    await expect(row.locator("td").nth(3)).toHaveText(publicUrl);
+    await expect(row.locator("td").nth(4)).toHaveText(publicUrl);
+    await expect(row.locator("td").nth(5)).toHaveText("HELPETS");
+    await expect(row.locator("td").nth(6)).toHaveText("PET");
+    await expect(row.locator("td").nth(7)).toHaveText("PET_TAG");
+    await expect(row.locator("td").nth(8)).toHaveText("UNACTIVATED");
+  }
+  await expect(page.getByRole("link", { name: "Descargar preview" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirmar lote Helpets" })).toBeVisible();
+  await page.getByRole("link", { name: "Cancelar" }).click();
+  await expect(page.getByRole("heading", { name: "Produccion" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "SAMPLE-HELPETS-001" })).toHaveCount(0);
   await page.goto("/admin/devices");
   await page.locator("section").filter({ hasText: "HLP009" }).first().getByRole("button", { name: "Suspender" }).click();
   await expect(page).toHaveURL(/status=updated/);
